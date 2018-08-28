@@ -1,4 +1,4 @@
-window.onload = function () {
+function simpleImageEditor(idSelector) {
   var canvas,
     canvasContext,
     canvasStrokeStyle,
@@ -290,6 +290,18 @@ window.onload = function () {
     document.getElementById('simple-image-editor-controls').getElementsByClassName('simple-image-editor-drawing-control')[0].click();
   }
 
+  function simpleImageEditorGenerateCss() {
+    var generatedCSS = '<style>@@generatedCss</style>';
+    return generatedCSS;
+  }
+
+  function simpleImageEditorGenerateHTML() {
+    var generatedHTML = '@@generatedHTML';
+    return generatedHTML;
+  }
+
+  var containerElement = document.getElementById(idSelector);
+  containerElement.innerHTML = simpleImageEditorGenerateCss() + simpleImageEditorGenerateHTML();
   simpleImageEditorResetMouseInfo();
   var imageUploadElement = document.getElementById("simple-image-editor-upload");
   imageUploadElement.addEventListener('change', simpleImageEditorLoadimage, false);
@@ -302,4 +314,4 @@ window.onload = function () {
   canvasContext = canvas.getContext('2d');
 
   loggingLevel = loggingLevels.none;
-};
+}

@@ -1,4 +1,5 @@
-window.onload = function () {
+simpleImageEditor('image-editor-container');
+function simpleImageEditor(idSelector) {
   var canvas,
     canvasContext,
     canvasStrokeStyle,
@@ -290,6 +291,18 @@ window.onload = function () {
     document.getElementById('simple-image-editor-controls').getElementsByClassName('simple-image-editor-drawing-control')[0].click();
   }
 
+  function simpleImageEditorGenerateCss() {
+    var generatedCSS = '<style>.simple-image-editor-container{position:relative;overflow:hidden;margin-bottom:10px;margin-top:10px;text-align:center;border:1px #000 solid}.simple-image-editor-container>img{width:96%;position:absolute;display:block;top:0;left:6px}#simple-image-editor-canvas:hover{cursor:cell}.simple-image-editor-inline-block{display:inline-block}.simple-image-editor-hidden{display:none!important}#simple-image-editor{margin:10px}#simple-image-editor-container{display:hidden}#simple-image-editor>#simple-image-editor-controls{vertical-align:top;min-width:155px;width:155px}#simple-image-editor>#simple-image-editor-controls .simple-image-editor-control-container{margin-top:10px;margin-bottom:10px}.simple-image-editor-pressed-control{color:#fff;background-color:#494a4f;border:#767676 2px solid}#simple-image-editor-line-width{width:50px}</style>';
+    return generatedCSS;
+  }
+
+  function simpleImageEditorGenerateHTML() {
+    var generatedHTML = '<div>Choose a file</div><input id="simple-image-editor-upload" type="file"><br><div id="simple-image-editor"><canvas id="simple-image-editor-canvas" class="simple-image-editor-container"></canvas><div id="simple-image-editor-container" class="simple-image-editor-container simple-image-editor-hidden"><img id="simple-image-editor-hidden-preview"> <a id="simple-image-editor-hidden-save-link"></a></div><div id="simple-image-editor-controls" class="simple-image-editor-hidden"><div class="simple-image-editor-control-container"><button id="simple-image-editor-rotate-button">Rotate</button></div><hr><div class="simple-image-editor-control-container"><input id="simple-image-editor-color-picker" type="color"> <span>Select color</span></div><div class="simple-image-editor-control-container"><input id="simple-image-editor-line-width" min="1" max="10" type="range"> <span>Line width: <span id="simple-image-editor-line-width-display"></span></span></div><div class="simple-image-editor-control-container"><button data-value="0" class="simple-image-editor-drawing-control">Pencil</button></div><div class="simple-image-editor-control-container"><button data-value="1" class="simple-image-editor-drawing-control">Line</button></div><hr><div class="simple-image-editor-control-container"><button id="simple-image-editor-save-button" disabled="disabled">Save</button></div></div></div>';
+    return generatedHTML;
+  }
+
+  var containerElement = document.getElementById(idSelector);
+  containerElement.innerHTML = simpleImageEditorGenerateCss() + simpleImageEditorGenerateHTML();
   simpleImageEditorResetMouseInfo();
   var imageUploadElement = document.getElementById("simple-image-editor-upload");
   imageUploadElement.addEventListener('change', simpleImageEditorLoadimage, false);
@@ -302,4 +315,4 @@ window.onload = function () {
   canvasContext = canvas.getContext('2d');
 
   loggingLevel = loggingLevels.none;
-};
+}
