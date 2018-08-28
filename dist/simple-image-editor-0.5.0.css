@@ -1,0 +1,47 @@
+.simple-image-editor-container {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  text-align: center;
+  border: 1px #000 solid;
+}
+.simple-image-editor-container > img {
+  width: 96%;
+  position: absolute;
+  display: block;
+  top: 0;
+  left: 6px;
+}
+#simple-image-editor-canvas:hover{
+  cursor: cell;
+}
+.simple-image-editor-inline-block{
+  display: inline-block;
+}
+.simple-image-editor-hidden{
+  display: none !important;
+}
+#simple-image-editor{
+  margin: 10px;
+}
+#simple-image-editor-container{
+  display: hidden;
+}
+#simple-image-editor > #simple-image-editor-controls {
+  vertical-align: top;
+  min-width: 155px;
+  width: 155px;
+}
+#simple-image-editor > #simple-image-editor-controls .simple-image-editor-control-container{
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.simple-image-editor-pressed-control{
+  color: #fff;
+  background-color: #494a4f;
+  border: #767676 2px solid;
+}
+#simple-image-editor-line-width{
+  width: 50px;
+}
