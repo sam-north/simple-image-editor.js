@@ -6,6 +6,8 @@ function simpleImageEditor(settings) {
     canvasStrokeLineWidth = configSettings.canvasStrokeLineWidth || 6,
     isDrawing = false,
     uneditedImageFileNameNoExtension = 'simple-image',
+    showDownloadButton = configSettings.showDownloadButton || true,
+    showSaveButton = configSettings.showSaveButton || false,
     imageRotationAngle = 0;
 
   var mouseInfo;
@@ -33,8 +35,6 @@ function simpleImageEditor(settings) {
     hiddenImagePreview.setAttribute('src', e.target.result);
     imageRotationAngle = 0;
     canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-    var imageEditorSaveButton = document.getElementById('sie-sb');
-    imageEditorSaveButton.removeAttribute('disabled');
   }
 
   function simpleImageEditorDrawImageToCanvas() {
@@ -146,8 +146,16 @@ function simpleImageEditor(settings) {
     var editedImageAppendedName = configSettings.editedImageAppendedName || '-edited';
     var editedImageFileType = configSettings.editedImageFileType || 'png';
 
+    var savedUrlOctet = canvas.toDataURL("image/" + editedImageAppendedName).replace("image/" + editedImageAppendedName, "image/octet-stream");
     hiddenLink.setAttribute('download', uneditedImageFileNameNoExtension + editedImageAppendedName + '.' + editedImageFileType);
-    hiddenLink.setAttribute('href', canvas.toDataURL("image/" + editedImageAppendedName).replace("image/" + editedImageAppendedName, "image/octet-stream"));
+    hiddenLink.setAttribute('href', savedUrlOctet);
+
+    return savedUrlOctet;
+  }
+
+  function simpleImageEditorHandleImageEditorDownload() {
+    simpleImageEditorHandleImageEditorSave();
+    var hiddenLink = document.getElementById('sie-hsl');
     hiddenLink.click();
   }
 
@@ -195,7 +203,17 @@ function simpleImageEditor(settings) {
     canvas.addEventListener('mouseout', simpleImageEditorHandleImageEditorMouseEnd, false);
 
     var imageEditorSaveButton = document.getElementById('sie-sb');
-    imageEditorSaveButton.addEventListener('click', simpleImageEditorHandleImageEditorSave, false);
+
+    if (showSaveButton)
+      imageEditorSaveButton.addEventListener('click', simpleImageEditorHandleImageEditorSave, false);
+    else
+      imageEditorSaveButton.classList.add('sie-h');
+
+    var iamgeEditorDownloadButton = document.getElementById('sie-d');
+    if (showDownloadButton)
+      iamgeEditorDownloadButton.addEventListener('click', simpleImageEditorHandleImageEditorDownload, false);
+    else
+      iamgeEditorDownloadButton.classList.add('sie-h');
 
     var drawingControls = document.getElementsByClassName('sie-dc');
     for (var key in drawingControls) {
@@ -213,7 +231,7 @@ function simpleImageEditor(settings) {
   }
 
   function simpleImageEditorGenerateHTML() {
-    var generatedHTML = '<div>Choose a file</div><input id="sie-fu" type="file"><br><div id="sie"><canvas id="sie-cnv" class="sie-cnt"></canvas><div id="sie-cnt" class="sie-cnt sie-h"><img id="sie-hp"> <a id="sie-hsl"></a></div><div id="sie-c" class="sie-h"><div class="sie-cc"><button id="sie-rb">Rotate</button></div><hr><div class="sie-cc"><input id="sie-cp" type="color"> <span>Select color</span></div><div class="sie-cc"><input id="sie-lw" min="1" max="10" type="range"> <span>Line width: <span id="sie-lwd"></span></span></div><div class="sie-cc"><button data-value="0" class="sie-dc">Pencil</button></div><div class="sie-cc"><button data-value="1" class="sie-dc">Line</button></div><hr><div class="sie-cc"><button id="sie-sb" disabled="disabled">Save</button></div></div></div>';
+    var generatedHTML = '<input id="sie-fu" type="file"><br><div id="sie"><canvas id="sie-cnv" class="sie-cnt"></canvas><div id="sie-cnt" class="sie-cnt sie-h"><img id="sie-hp"> <a id="sie-hsl"></a></div><div id="sie-c" class="sie-h"><div class="sie-cc"><button id="sie-rb">Rotate</button></div><hr><div class="sie-cc"><input id="sie-cp" type="color"> <span>Select color</span></div><div class="sie-cc"><input id="sie-lw" min="1" max="10" type="range"> <span>Line width: <span id="sie-lwd"></span></span></div><div class="sie-cc"><button data-value="0" class="sie-dc">Pencil</button></div><div class="sie-cc"><button data-value="1" class="sie-dc">Line</button></div><hr><div class="sie-cc"><button id="sie-sb">Save</button> <button id="sie-d">Download</button></div></div></div>';
     return generatedHTML;
   }
 
@@ -221,12 +239,17 @@ function simpleImageEditor(settings) {
   containerElement.innerHTML = simpleImageEditorGenerateCss() + simpleImageEditorGenerateHTML();
   simpleImageEditorResetMouseInfo();
   var imageUploadElement = document.getElementById("sie-fu");
-  imageUploadElement.addEventListener('change', simpleImageEditorLoadimage, false);
+  imageUploadElement.addEventListener('input', simpleImageEditorLoadimage, false);
   var imagePreview = document.getElementById('sie-hp');
   imagePreview.addEventListener('load', simpleImageEditorDrawImageToCanvas, false);
+
 
   canvas = document.getElementById('sie-cnv');
   canvas.width = configSettings.width || 300;
   canvas.height = configSettings.height || canvas.width;
   canvasContext = canvas.getContext('2d');
+
+  return {
+    saveImage: simpleImageEditorHandleImageEditorSave
+  };
 }

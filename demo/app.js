@@ -1,7 +1,9 @@
 var settings = {
     containerId: 'simple-image-editor',
     editedImageFileType: 'png',
-    width: 300
+    width: 300,
+    showSaveButton: true,
+    showDownloadButton: false
 };
 
-simpleImageEditor(settings);
+var blerg = simpleImageEditor(settings);
