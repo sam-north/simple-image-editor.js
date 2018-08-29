@@ -1,9 +1,6 @@
 module.exports = function (grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    buildVariables: {
-      name: '<%= pkg.name %>-<%= pkg.version %>'
-    },
     concat: {
       buildJs: {
         src: ['src/js/<%= pkg.name %>.js'],
@@ -34,8 +31,8 @@ module.exports = function (grunt) {
       },
       dist: {
         files: {
-          'dist/<%= buildVariables.name %>.min.js': ['dist/<%= pkg.name %>.js'],
-          'versions/<%= pkg.version %>/<%= buildVariables.name %>.min.js': ['dist/<%= pkg.name %>.js'],
+          'dist/<%= pkg.name %>.min.js': ['dist/<%= pkg.name %>.js'],
+          'versions/<%= pkg.version %>/<%= pkg.name %>.min.js': ['dist/<%= pkg.name %>.js'],
         }
       }
     },
