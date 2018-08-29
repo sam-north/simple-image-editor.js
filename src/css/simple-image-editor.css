@@ -22,14 +22,12 @@
 .sie-h{
   display: none !important;
 }
-#sie{
-  margin: 10px;
-}
 #sie-cnt{
   display: hidden;
 }
 #sie-c {
   vertical-align: top;
+  margin-left: 10px;
   min-width: 155px;
   width: 155px;
 }

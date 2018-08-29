@@ -76,11 +76,11 @@ function simpleImageEditor(settings) {
   }
 
   function simpleImageEditorGetCurrentMouseX(e) {
-    return e.clientX - canvas.offsetLeft;
+    return e.clientX - canvas.getBoundingClientRect().left;
   }
 
   function simpleImageEditorGetCurrentMouseY(e) {
-    return e.clientY - canvas.offsetTop;
+    return e.clientY - canvas.getBoundingClientRect().top;
   }
 
   function simpleImageEditorSetMouseCoordinates(e) {
@@ -208,7 +208,7 @@ function simpleImageEditor(settings) {
   }
 
   function simpleImageEditorGenerateCss() {
-    var generatedCSS = '<style>.sie-cnt{position:relative;overflow:hidden;margin-bottom:10px;margin-top:10px;text-align:center;border:1px #000 solid}.sie-cnt>img{width:96%;position:absolute;display:block;top:0;left:6px}#sie-cnv:hover{cursor:cell}.sie-ib{display:inline-block}.sie-h{display:none!important}#sie{margin:10px}#sie-cnt{display:hidden}#sie-c{vertical-align:top;min-width:155px;width:155px}#sie-c .sie-cc{margin-top:10px;margin-bottom:10px}.sie-pc{color:#fff;background-color:#494a4f;border:#767676 2px solid}#sie-lw{width:50px}</style>';
+    var generatedCSS = '<style>.sie-cnt{position:relative;overflow:hidden;margin-bottom:10px;margin-top:10px;text-align:center;border:1px #000 solid}.sie-cnt>img{width:96%;position:absolute;display:block;top:0;left:6px}#sie-cnv:hover{cursor:cell}.sie-ib{display:inline-block}.sie-h{display:none!important}#sie-cnt{display:hidden}#sie-c{vertical-align:top;margin-left:10px;min-width:155px;width:155px}#sie-c .sie-cc{margin-top:10px;margin-bottom:10px}.sie-pc{color:#fff;background-color:#494a4f;border:#767676 2px solid}#sie-lw{width:50px}</style>';
     return generatedCSS;
   }
 

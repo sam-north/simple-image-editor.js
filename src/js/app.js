@@ -1,7 +1,7 @@
 var settings = {
-    containerId: 'image-editor-container',
-    editedImageFileType: 'jpeg',
-    width: 600
+    containerId: 'simple-image-editor',
+    editedImageFileType: 'png',
+    width: 300
 };
 
 simpleImageEditor(settings);

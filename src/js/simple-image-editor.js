@@ -76,11 +76,11 @@ function simpleImageEditor(settings) {
   }
 
   function simpleImageEditorGetCurrentMouseX(e) {
-    return e.clientX - canvas.offsetLeft;
+    return e.clientX - canvas.getBoundingClientRect().left;
   }
 
   function simpleImageEditorGetCurrentMouseY(e) {
-    return e.clientY - canvas.offsetTop;
+    return e.clientY - canvas.getBoundingClientRect().top;
   }
 
   function simpleImageEditorSetMouseCoordinates(e) {
