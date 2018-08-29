@@ -1,0 +1,38 @@
+<div>
+    Choose a file
+</div>
+<input id="sie-fu" type="file" />
+<br />
+<div id="sie">
+    <canvas id="sie-cnv" class="sie-cnt"></canvas>
+    <div id="sie-cnt" class="sie-cnt sie-h">
+        <img id="sie-hp">
+        <a id="sie-hsl"></a>
+    </div>
+    <div id="sie-c" class="sie-h">
+        <div class="sie-cc">
+            <button id="sie-rb">Rotate</button>
+        </div>
+        <hr />
+        <div class="sie-cc">
+            <input id="sie-cp" type="color">
+            <span>Select color</span>
+        </div>
+        <div class="sie-cc">
+            <input id="sie-lw" min="1" max="10" type="range">
+            <span>Line width:
+                <span id="sie-lwd"></span>
+            </span>
+        </div>
+        <div class="sie-cc">
+            <button data-value="0" class="sie-dc">Pencil</button>
+        </div>
+        <div class="sie-cc">
+            <button data-value="1" class="sie-dc">Line</button>
+        </div>
+        <hr />
+        <div class="sie-cc">
+            <button id="sie-sb" disabled>Save</button>
+        </div>
+    </div>
+</div>
