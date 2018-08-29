@@ -6,18 +6,14 @@ module.exports = function (grunt) {
     },
     concat: {
       buildJs: {
-        src: ['src/**/*.js'],
+        src: ['src/js/<%= pkg.name %>.js'],
         dest: 'build/<%= pkg.name %>.js',
-      },
-      buildCss: {
-        src: ['src/**/*.css'],
-        dest: 'build/<%= pkg.name %>.css',
-      },
+      }
     },
     cssmin: {
       target: {
         files: {
-          'build/template.min.css': ['<%= concat.buildCss.dest %>']
+          'build/build.min.css': ['src/css/<%= pkg.name %>.css']
         }
       }
     },
@@ -28,7 +24,7 @@ module.exports = function (grunt) {
           collapseWhitespace: true
         },
         files: {                                   // Dictionary of files
-          'build/template.html': 'src/html/template.html',     // 'destination': 'source'
+          'build/build.min.html': 'src/html/<%= pkg.name %>.html',     // 'destination': 'source'
         }
       }
     },
@@ -39,7 +35,7 @@ module.exports = function (grunt) {
       dist: {
         files: {
           'dist/<%= buildVariables.name %>.min.js': ['dist/<%= pkg.name %>.js'],
-          // 'versions/<%= pkg.version %>/<%= buildVariables.name %>.min.js': ['<%= concat.versionHistoryJs.dest %>'],
+          'versions/<%= pkg.version %>/<%= buildVariables.name %>.min.js': ['dist/<%= pkg.name %>.js'],
         }
       }
     },
@@ -65,11 +61,11 @@ module.exports = function (grunt) {
           patterns: [
             {
               match: 'generatedHTML',
-              replacement: '<%= grunt.file.read("build/template.html") %>'
+              replacement: '<%= grunt.file.read("build/build.min.html") %>'
             },
             {
               match: 'generatedCss',
-              replacement: '<%= grunt.file.read("build/template.min.css") %>'
+              replacement: '<%= grunt.file.read("build/build.min.css") %>'
             }
           ]
         },
