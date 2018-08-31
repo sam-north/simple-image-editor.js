@@ -174,7 +174,7 @@ function simpleImageEditor(settings) {
     var hiddenLink = document.getElementById('sie-hsl');
     var editedImageFileType = configSettings.exportImageFileType || 'png';
 
-    var editedFileName = uneditedImageFileNameNoExtension + '.' + editedImageFileType;
+    var editedFileName = decodeURI(uneditedImageFileNameNoExtension + '.' + editedImageFileType);
 
 
     var savedUrlOctet = canvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
@@ -182,7 +182,7 @@ function simpleImageEditor(settings) {
     hiddenLink.setAttribute('href', savedUrlOctet);
 
     return {
-      originalFileName: uneditedImageFileName,
+      originalFileName: decodeURI(uneditedImageFileName),
       base64Image: savedUrlOctet,
       editedFileName: editedFileName
     };
