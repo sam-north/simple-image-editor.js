@@ -1,21 +1,82 @@
 function simpleImageEditor(settings) {
   var configSettings = settings || {};
-  var canvas,
-    canvasContext,
-    canvasStrokeStyle,
-    canvasStrokeLineWidth = configSettings.canvasStrokeLineWidth || 6,
-    isDrawing = false,
-    uneditedImageFileNameNoExtension = 'simple-image',
-    imageRotationAngle = 0;
-
-  var mouseInfo;
-  var drawingControls = {
+  var drawingControlTypes = {
     pencil: 0,
     line: 1
   };
-  var currentDrawingControl;
+  var canvas,
+    canvasContext,
+    canvasStrokeStyle,
+    canvasStrokeLineWidth = configSettings.defaultDrawingThickness || 6,
+    mouseInfo,
+    isDrawing = false,
+    uneditedImageFileNameNoExtension,
+    uneditedImageFileName,
+    currentDrawingControl,
+    showDownloadButton = configSettings.showDownloadButton !== undefined ? configSettings.showDownloadButton : true,
+    showSaveButton = configSettings.showSaveButton !== undefined ? configSettings.showSaveButton : false,
+    imageRotationAngle = 0;
 
-  function simpleImageEditorResetMouseInfo() {
+  function loadImageFromFileInput(e) {
+    var file = e.target.files[0];
+    var fileReader = new FileReader();
+    fileReader.onload = imageLoadedHandler;
+    fileReader.readAsDataURL(file);
+    buildFileName(file.name);
+  }
+
+  function loadImageFromUrl(jsImage) {
+    buildFileName(jsImage.src);
+    setHiddenImgPreviewSrc(jsImage.src);
+  }
+
+  function setHiddenImgPreviewSrc(src) {
+    var hiddenImagePreview = document.getElementById('sie-hp');
+    hiddenImagePreview.setAttribute('src', src);
+    loadImageSetup();
+  }
+
+  function imageLoadedHandler(e) {
+    setHiddenImgPreviewSrc(e.target.result);
+  }
+
+  function drawImageToCanvas() {
+    var hiddenImagePreview = document.getElementById('sie-hp');
+    var imageProportionScale = hiddenImagePreview.width / canvas.width;
+    var imageScaledHeight = hiddenImagePreview.height / imageProportionScale;
+    var heightDifference = canvas.height - imageScaledHeight;
+    var heightOffset = heightDifference > 0 && (imageRotationAngle === 90 || imageRotationAngle === 180) ? heightDifference : 0;
+    canvasContext.drawImage(hiddenImagePreview, 0, heightOffset, canvas.width, imageScaledHeight);
+  }
+
+  function loadImageSetup() {
+    var controls = document.getElementById('sie-c');
+    controls.classList.remove('sie-h');
+    controls.classList.add('sie-ib');
+    imageRotationAngle = 0;
+    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    initializeImageEditorControlEventListeners();
+  }
+
+  function buildFileName(fullName) {
+    if (fullName && fullName !== '') {
+      var lastSlashIndex = fullName.lastIndexOf('\\');
+      if (lastSlashIndex === -1)
+        lastSlashIndex = fullName.lastIndexOf('/');
+
+      uneditedImageFileName = lastSlashIndex === -1 ? fullName : fullName.substring(lastSlashIndex + 1);
+
+      var fileExtensionIndexStart = uneditedImageFileName.lastIndexOf('.');
+      if (fileExtensionIndexStart != -1)
+        uneditedImageFileNameNoExtension = uneditedImageFileName.substring(0, fileExtensionIndexStart);
+    }
+    else {
+      uneditedImageFileName = 'simple-image-editor';
+      uneditedImageFileNameNoExtension = uneditedImageFileName;
+    }
+  }
+
+  function resetMouseInfo() {
     mouseInfo = {
       pX: 0,
       pY: 0,
@@ -28,25 +89,7 @@ function simpleImageEditor(settings) {
     };
   }
 
-  function simpleImageEditorImageHandler(e) {
-    var hiddenImagePreview = document.getElementById('sie-hp');
-    hiddenImagePreview.setAttribute('src', e.target.result);
-    imageRotationAngle = 0;
-    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
-    var imageEditorSaveButton = document.getElementById('sie-sb');
-    imageEditorSaveButton.removeAttribute('disabled');
-  }
-
-  function simpleImageEditorDrawImageToCanvas() {
-    var hiddenImagePreview = document.getElementById('sie-hp');
-    var imageProportionScale = hiddenImagePreview.width / canvas.width;
-    var imageScaledHeight = hiddenImagePreview.height / imageProportionScale;
-    var heightDifference = canvas.height - imageScaledHeight;
-    var heightOffset = heightDifference > 0 && (imageRotationAngle === 90 || imageRotationAngle === 180) ? heightDifference : 0;
-    canvasContext.drawImage(hiddenImagePreview, 0, heightOffset, canvas.width, imageScaledHeight);
-  }
-
-  function simpleImageEditorHandleRotateButtonClick(e) {
+  function handleRotateButtonClick(e) {
     canvasContext.save();
     imageRotationAngle = (imageRotationAngle + 90) % 360;
     var radianRotationAngle = imageRotationAngle * Math.PI / 180;
@@ -55,42 +98,28 @@ function simpleImageEditor(settings) {
     var yTranslation = imageRotationAngle === 180 || imageRotationAngle === 270 ? canvas.height : 0;
     canvasContext.translate(xTranslation, yTranslation);
     canvasContext.rotate(radianRotationAngle);
-    simpleImageEditorDrawImageToCanvas();
+    drawImageToCanvas();
     canvasContext.rotate(-radianRotationAngle);
     canvasContext.translate(-xTranslation, yTranslation);
     canvasContext.restore();
   }
 
-  function simpleImageEditorLoadimage(e) {
-    var file = e.target.files[0];
-    var fileReader = new FileReader();
-    fileReader.onload = simpleImageEditorImageHandler;
-    fileReader.readAsDataURL(file);
-    var fileExtensionIndexStart = file.name.lastIndexOf('.');
-    if (fileExtensionIndexStart != -1)
-      uneditedImageFileNameNoExtension = file.name.substring(0, fileExtensionIndexStart);
-    var controls = document.getElementById('sie-c');
-    controls.classList.remove('sie-h');
-    controls.classList.add('sie-ib');
-    simpleImageEditorInitializeImageEditorControlEventListeners();
-  }
-
-  function simpleImageEditorGetCurrentMouseX(e) {
+  function getCurrentMouseX(e) {
     return e.clientX - canvas.getBoundingClientRect().left;
   }
 
-  function simpleImageEditorGetCurrentMouseY(e) {
+  function getCurrentMouseY(e) {
     return e.clientY - canvas.getBoundingClientRect().top;
   }
 
-  function simpleImageEditorSetMouseCoordinates(e) {
+  function setMouseInfo(e) {
     mouseInfo.pX = mouseInfo.X;
     mouseInfo.pY = mouseInfo.Y;
-    mouseInfo.X = simpleImageEditorGetCurrentMouseX(e);
-    mouseInfo.Y = simpleImageEditorGetCurrentMouseY(e);
+    mouseInfo.X = getCurrentMouseX(e);
+    mouseInfo.Y = getCurrentMouseY(e);
   }
 
-  function simpleImageEditorDrawPathOnCanvas() {
+  function drawPathOnCanvas() {
     canvasContext.beginPath();
     canvasContext.moveTo(mouseInfo.pX, mouseInfo.pY);
     canvasContext.lineTo(mouseInfo.X, mouseInfo.Y);
@@ -100,7 +129,7 @@ function simpleImageEditor(settings) {
     canvasContext.closePath();
   }
 
-  function simpleImageEditorDrawLineOnCanvas() {
+  function drawLineOnCanvas() {
     canvasContext.beginPath();
     canvasContext.moveTo(mouseInfo.beginX, mouseInfo.beginY);
     canvasContext.lineTo(mouseInfo.endX, mouseInfo.endY);
@@ -110,123 +139,167 @@ function simpleImageEditor(settings) {
     canvasContext.closePath();
   }
 
-  function simpleImageEditorHandleImageEditorMouseBegin(e) {
-    simpleImageEditorResetMouseInfo();
-    mouseInfo.beginX = simpleImageEditorGetCurrentMouseX(e);
-    mouseInfo.beginY = simpleImageEditorGetCurrentMouseY(e);
-    simpleImageEditorSetMouseCoordinates(e);
+  function handleImageEditorMouseBegin(e) {
+    resetMouseInfo();
+    mouseInfo.beginX = getCurrentMouseX(e);
+    mouseInfo.beginY = getCurrentMouseY(e);
+    setMouseInfo(e);
     isDrawing = true;
   }
 
-  function simpleImageEditorHandleImageEditorMouseMove(e) {
+  function handleImageEditorMouseMove(e) {
     if (isDrawing) {
-      simpleImageEditorSetMouseCoordinates(e);
-      if (currentDrawingControl === drawingControls.pencil) {
-        simpleImageEditorDrawPathOnCanvas();
+      setMouseInfo(e);
+      if (currentDrawingControl === drawingControlTypes.pencil) {
+        drawPathOnCanvas();
       }
     }
   }
 
-  function simpleImageEditorHandleImageEditorMouseEnd(e) {
-    mouseInfo.endX = simpleImageEditorGetCurrentMouseX(e);
-    mouseInfo.endY = simpleImageEditorGetCurrentMouseY(e);
-    if (isDrawing && currentDrawingControl === drawingControls.line)
-      simpleImageEditorDrawLineOnCanvas();
+  function handleImageEditorMouseEnd(e) {
+    mouseInfo.endX = getCurrentMouseX(e);
+    mouseInfo.endY = getCurrentMouseY(e);
+    if (isDrawing && currentDrawingControl === drawingControlTypes.line)
+      drawLineOnCanvas();
     isDrawing = false;
-    simpleImageEditorResetMouseInfo();
+    resetMouseInfo();
   }
 
-  function simpleImageEditorSetColorForImageEditor() {
+  function setColorForImageEditor() {
     var colorPickerElement = document.getElementById('sie-cp');
     canvasStrokeStyle = colorPickerElement.value;
   }
 
-  function simpleImageEditorHandleImageEditorSave() {
+  function handleImageEditorSave() {
     var hiddenLink = document.getElementById('sie-hsl');
-    var editedImageAppendedName = configSettings.editedImageAppendedName || '-edited';
-    var editedImageFileType = configSettings.editedImageFileType || 'png';
+    var editedImageFileType = configSettings.exportImageFileType || 'png';
 
-    hiddenLink.setAttribute('download', uneditedImageFileNameNoExtension + editedImageAppendedName + '.' + editedImageFileType);
-    hiddenLink.setAttribute('href', canvas.toDataURL("image/" + editedImageAppendedName).replace("image/" + editedImageAppendedName, "image/octet-stream"));
+    var editedFileName = uneditedImageFileNameNoExtension + '.' + editedImageFileType;
+
+
+    var savedUrlOctet = canvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
+    hiddenLink.setAttribute('download', editedFileName);
+    hiddenLink.setAttribute('href', savedUrlOctet);
+
+    return {
+      originalFileName: uneditedImageFileName,
+      base64Image: savedUrlOctet,
+      editedFileName: editedFileName
+    };
+  }
+
+  function handleImageEditorDownload() {
+    handleImageEditorSave();
+    var hiddenLink = document.getElementById('sie-hsl');
     hiddenLink.click();
   }
 
-  function simpleImageEditorHandleDrawingControlClick(e) {
-    var drawingControls = document.getElementsByClassName('sie-dc');
-    for (var key in drawingControls) {
-      if (drawingControls.hasOwnProperty(key)) {
-        var element = drawingControls[key];
-        element.classList.remove('sie-pc');
-        element.removeAttribute('disabled');
-      }
-    }
-    currentDrawingControl = Number(e.target.dataset.value);
-    e.target.setAttribute('disabled', 'disabled');
-    e.target.classList.add('sie-pc');
+  function handleDrawingControlClick(e) {
+    setCurrentDrawingControl(e.target.dataset.value);
   }
 
-  function simpleImageEditorSetLineWidthValueDisplay() {
+  function setCurrentDrawingControl(newValue) {
+    var drawingControlValue = newValue;
+    if (isNaN(drawingControlValue))
+      drawingControlValue = drawingControlTypes[newValue];
+
+    currentDrawingControl = Number(drawingControlValue);
+
+    var drawingControlElements = document.getElementsByClassName('sie-dc');
+    for (var key in drawingControlElements) {
+      if (drawingControlElements.hasOwnProperty(key)) {
+        var element = drawingControlElements[key];
+        element.classList.remove('sie-pc');
+        element.removeAttribute('disabled');
+
+        if (Number(element.dataset.value) === currentDrawingControl) {
+          element.setAttribute('disabled', 'disabled');
+          element.classList.add('sie-pc');
+        }
+      }
+    }
+  }
+
+  function setLineWidthValueDisplay() {
     var lineWidthDisplayElement = document.getElementById('sie-lwd');
     lineWidthDisplayElement.textContent = canvasStrokeLineWidth;
   }
 
-  function simpleImageEditorHandleLineWidthChange(e) {
+  function handleLineWidthChange(e) {
     canvasStrokeLineWidth = Number(e.target.value);
-    simpleImageEditorSetLineWidthValueDisplay();
+    setLineWidthValueDisplay();
   }
 
-  function simpleImageEditorInitializeImageEditorControlEventListeners() {
+  function initializeImageEditorControlEventListeners() {
     var rotateButtonElement = document.getElementById('sie-rb');
-    rotateButtonElement.addEventListener('click', simpleImageEditorHandleRotateButtonClick, false);
+    rotateButtonElement.addEventListener('click', handleRotateButtonClick, false);
 
     var lineWidthElement = document.getElementById('sie-lw');
     lineWidthElement.value = canvasStrokeLineWidth;
-    lineWidthElement.addEventListener('change', simpleImageEditorHandleLineWidthChange, false);
-    simpleImageEditorSetLineWidthValueDisplay();
+    lineWidthElement.addEventListener('change', handleLineWidthChange, false);
+    setLineWidthValueDisplay();
 
     var colorPickerElement = document.getElementById('sie-cp');
-    colorPickerElement.addEventListener('change', simpleImageEditorSetColorForImageEditor, false);
-    colorPickerElement.value = configSettings.canvasStrokeStyle || '#FF0000';
-    simpleImageEditorSetColorForImageEditor();
+    colorPickerElement.addEventListener('change', setColorForImageEditor, false);
+    colorPickerElement.value = configSettings.defaultDrawingColor || '#FF0000';
+    setColorForImageEditor();
 
-    canvas.addEventListener('mousedown', simpleImageEditorHandleImageEditorMouseBegin, false);
-    canvas.addEventListener('mousemove', simpleImageEditorHandleImageEditorMouseMove, false);
-    canvas.addEventListener('mouseup', simpleImageEditorHandleImageEditorMouseEnd, false);
-    canvas.addEventListener('mouseout', simpleImageEditorHandleImageEditorMouseEnd, false);
+    canvas.addEventListener('mousedown', handleImageEditorMouseBegin, false);
+    canvas.addEventListener('mousemove', handleImageEditorMouseMove, false);
+    canvas.addEventListener('mouseup', handleImageEditorMouseEnd, false);
+    canvas.addEventListener('mouseout', handleImageEditorMouseEnd, false);
 
     var imageEditorSaveButton = document.getElementById('sie-sb');
-    imageEditorSaveButton.addEventListener('click', simpleImageEditorHandleImageEditorSave, false);
 
-    var drawingControls = document.getElementsByClassName('sie-dc');
-    for (var key in drawingControls) {
-      if (drawingControls.hasOwnProperty(key)) {
-        var element = drawingControls[key];
-        element.addEventListener('click', simpleImageEditorHandleDrawingControlClick, false);
+    if (showSaveButton)
+      imageEditorSaveButton.addEventListener('click', handleImageEditorSave, false);
+    else
+      imageEditorSaveButton.classList.add('sie-h');
+
+    var iamgeEditorDownloadButton = document.getElementById('sie-d');
+    if (showDownloadButton)
+      iamgeEditorDownloadButton.addEventListener('click', handleImageEditorDownload, false);
+    else
+      iamgeEditorDownloadButton.classList.add('sie-h');
+
+    var drawingControlElements = document.getElementsByClassName('sie-dc');
+    for (var key in drawingControlElements) {
+      if (drawingControlElements.hasOwnProperty(key)) {
+        var element = drawingControlElements[key];
+        element.addEventListener('click', handleDrawingControlClick, false);
       }
     }
-    document.getElementById('sie-c').getElementsByClassName('sie-dc')[0].click();
+    if (configSettings.defaultDrawingControl && configSettings.defaultDrawingControl !== '')
+      setCurrentDrawingControl(configSettings.defaultDrawingControl);
+    else
+      document.getElementById('sie-c').getElementsByClassName('sie-dc')[0].click();
   }
 
-  function simpleImageEditorGenerateCss() {
+  function generateCss() {
     var generatedCSS = '<style>.sie-cnt{position:relative;overflow:hidden;margin-bottom:10px;margin-top:10px;text-align:center;border:1px #000 solid}.sie-cnt>img{width:96%;position:absolute;display:block;top:0;left:6px}#sie-cnv:hover{cursor:cell}.sie-ib{display:inline-block}.sie-h{display:none!important}#sie-cnt{display:hidden}#sie-c{vertical-align:top;margin-left:10px;min-width:155px;width:155px}#sie-c .sie-cc{margin-top:10px;margin-bottom:10px}.sie-pc{color:#fff;background-color:#494a4f;border:#767676 2px solid}#sie-lw{width:50px}</style>';
     return generatedCSS;
   }
 
-  function simpleImageEditorGenerateHTML() {
-    var generatedHTML = '<div>Choose a file</div><input id="sie-fu" type="file"><br><div id="sie"><canvas id="sie-cnv" class="sie-cnt"></canvas><div id="sie-cnt" class="sie-cnt sie-h"><img id="sie-hp"> <a id="sie-hsl"></a></div><div id="sie-c" class="sie-h"><div class="sie-cc"><button id="sie-rb">Rotate</button></div><hr><div class="sie-cc"><input id="sie-cp" type="color"> <span>Select color</span></div><div class="sie-cc"><input id="sie-lw" min="1" max="10" type="range"> <span>Line width: <span id="sie-lwd"></span></span></div><div class="sie-cc"><button data-value="0" class="sie-dc">Pencil</button></div><div class="sie-cc"><button data-value="1" class="sie-dc">Line</button></div><hr><div class="sie-cc"><button id="sie-sb" disabled="disabled">Save</button></div></div></div>';
+  function generateHTML() {
+    var generatedHTML = '<input id="sie-fu" type="file"><br><div id="sie"><canvas id="sie-cnv" class="sie-cnt"></canvas><div id="sie-cnt" class="sie-cnt sie-h"><img id="sie-hp"> <a id="sie-hsl"></a></div><div id="sie-c" class="sie-h"><div class="sie-cc"><button id="sie-rb">Rotate</button></div><hr><div class="sie-cc"><input id="sie-cp" type="color"> <span>Select color</span></div><div class="sie-cc"><input id="sie-lw" min="1" max="10" type="range"> <span>Line width: <span id="sie-lwd"></span></span></div><div class="sie-cc"><button data-value="0" class="sie-dc">Pencil</button></div><div class="sie-cc"><button data-value="1" class="sie-dc">Line</button></div><hr><div class="sie-cc"><button id="sie-sb">Save</button> <button id="sie-d">Download</button></div></div></div>';
     return generatedHTML;
   }
 
   var containerElement = document.getElementById(configSettings.containerId);
-  containerElement.innerHTML = simpleImageEditorGenerateCss() + simpleImageEditorGenerateHTML();
-  simpleImageEditorResetMouseInfo();
+  containerElement.innerHTML = generateCss() + generateHTML();
+  resetMouseInfo();
   var imageUploadElement = document.getElementById("sie-fu");
-  imageUploadElement.addEventListener('change', simpleImageEditorLoadimage, false);
+  imageUploadElement.addEventListener('input', loadImageFromFileInput, false);
   var imagePreview = document.getElementById('sie-hp');
-  imagePreview.addEventListener('load', simpleImageEditorDrawImageToCanvas, false);
+  imagePreview.addEventListener('load', drawImageToCanvas, false);
 
   canvas = document.getElementById('sie-cnv');
   canvas.width = configSettings.width || 300;
   canvas.height = configSettings.height || canvas.width;
   canvasContext = canvas.getContext('2d');
+
+  return {
+    saveImage: handleImageEditorSave,
+    loadImage: loadImageFromUrl
+  };
 }
