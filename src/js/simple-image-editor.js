@@ -154,8 +154,8 @@ function simpleImageEditor(settings) {
   }
 
   function drawEraserOnCanvas() {
-    var halfLineWidth = canvasStrokeLineWidth / 2;
-    canvasContext.clearRect(mouseInfo.X - halfLineWidth, mouseInfo.Y - halfLineWidth, canvasStrokeLineWidth, canvasStrokeLineWidth);
+    var expandedLineWidth = canvasStrokeLineWidth * 3;
+    canvasContext.clearRect(mouseInfo.X - canvasStrokeLineWidth, mouseInfo.Y - canvasStrokeLineWidth, expandedLineWidth, expandedLineWidth);
   }
 
   function drawLineOnCanvas() {
@@ -169,36 +169,74 @@ function simpleImageEditor(settings) {
   }
 
   function drawArrowOnCanvas() {
+    var xDifference = mouseInfo.endX - mouseInfo.beginX;
+    var xDifferenceTenth = xDifference * 0.1;
+    var xDifferenceSmaller = xDifference * 0.07;
+    var xPoint = mouseInfo.endX - xDifferenceTenth;
+    var xPointSmaller = mouseInfo.endX - xDifferenceSmaller;
+    var yDifference = mouseInfo.endY - mouseInfo.beginY;
+    var yDifferenceTenth = yDifference * 0.1;
+    var yDifferenceSmaller = yDifference * 0.07;
+    var yPoint = mouseInfo.endY - yDifferenceTenth;
+    var yPointSmaller = mouseInfo.endY - yDifferenceSmaller;
+    var slopeTop = (mouseInfo.endY - mouseInfo.beginY);
+    var slopeBottom = (mouseInfo.endX - mouseInfo.beginX);
+    var perpendicularSlope = -1 * (slopeBottom / slopeTop);
+    var points = getPerpendicularLinePointsForTriangle(xPoint, yPoint, canvasStrokeLineWidth * 2.5, perpendicularSlope);
+
     canvasContext.beginPath();
     canvasContext.moveTo(mouseInfo.beginX, mouseInfo.beginY);
-    canvasContext.lineTo(mouseInfo.endX, mouseInfo.endY);
+    canvasContext.lineTo(xPointSmaller, yPointSmaller);
     canvasContext.strokeStyle = canvasStrokeStyle;
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
 
-    console.log('Arrow draw: ', 'beginX: ' + mouseInfo.beginX, 'endX: ' + mouseInfo.endX, 'beginY: ' + mouseInfo.beginY, 'endY: ' + mouseInfo.endY);
-    var slope = (mouseInfo.endY - mouseInfo.beginY) / (mouseInfo.endX - mouseInfo.beginX);
-    var distanceOfLine = Math.sqrt(Math.pow(mouseInfo.endX - mouseInfo.beginX, 2) + Math.pow(mouseInfo.endY - mouseInfo.beginY, 2));
-    var halfSlope = slope / 2;
-    var doubleSlope = slope * 2;
+    canvasContext.beginPath();
+    canvasContext.moveTo(points.a.x, points.a.y);
+    canvasContext.lineTo(points.b.x, points.b.y);
+    canvasContext.lineTo(mouseInfo.endX, mouseInfo.endY);
+    canvasContext.fillStyle = canvasStrokeStyle;
+    canvasContext.fill();
+    canvasContext.closePath();
+  }
 
-    console.log('slope:' + slope);
-    console.log('distanceOfLine:' + distanceOfLine);
-    console.log('halfSlope:' + halfSlope);
-    console.log('doubleSlope:' + doubleSlope);
-    var yIntercept = mouseInfo.endY - (mouseInfo.endX * slope);
-    console.log('y=mx+b: with ' + mouseInfo.endY + ' - (' + mouseInfo.endX + ' * ' + slope + ') = ' + yIntercept);
-    var xAtYIntercept = (0 - yIntercept) / slope;
-    console.log('YIntercept = (' + xAtYIntercept + ',' + yIntercept + ')');
+  function getPerpendicularLinePointsForTriangle(x, y, distance, slope) {
+    var aX, aY, bX, bY;
+    if (slope === 0) {
+      aX = x + distance;
+      aY = y;
 
-    // canvasContext.beginPath();
-    // canvasContext.moveTo(xAtYIntercept, yIntercept);
-    // canvasContext.lineTo(mouseInfo.beginX, mouseInfo.beginY);
-    // canvasContext.strokeStyle = '#FF0000';
-    // canvasContext.lineWidth = canvasStrokeLineWidth;
-    // canvasContext.stroke();
-    // canvasContext.closePath();
+      bX = x - distance;
+      bY = y;
+    }
+    else if (!isFinite(slope)) {
+      aX = x;
+      aY = y + distance;
+
+      bX = x;
+      bY = y - distance;
+    }
+    else {
+      var dX = (distance / Math.sqrt(1 + Math.pow(slope, 2)));
+      var dY = slope * dX;
+
+      aX = x + dX;
+      aY = y + dY;
+
+      bX = x - dX;
+      bY = y - dY;
+    }
+    return {
+      a: {
+        x: aX,
+        y: aY
+      },
+      b: {
+        x: bX,
+        y: bY
+      }
+    };
   }
 
   function handleImageEditorMouseBegin(e) {
