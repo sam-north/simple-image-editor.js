@@ -1,4 +1,4 @@
-<input id="sie-fu" type="file" />
+<input id="sie-fu" type="file" /><span> "ctrl + v" to paste</span>
 <br />
 <div id="sie">
     <canvas id="sie-i-cnv" class="sie-cnt"></canvas>
@@ -10,13 +10,20 @@
         <a id="sie-hsl"></a>
     </div>
     <div id="sie-c" class="sie-h">
-        <div class="sie-cc">
-            <button id="sie-rb">Rotate</button>
+        <div class="sie-bc sie-ib">
+            <div class="sie-cc">
+                <button id="sie-rbl">&lt;- Rotate</button>
+            </div>
+        </div>
+        <div class="sie-bc sie-ib">
+            <div class="sie-cc">
+                <button id="sie-rbr">-&gt; Rotate</button>
+            </div>
         </div>
         <hr />
         <div class="sie-cc">
             <input id="sie-cp" type="color">
-            <span>Select color</span>
+            <span> Select color</span>
         </div>
         <div class="sie-cc">
             <input id="sie-lw" min="1" max="10" type="range">
@@ -24,22 +31,36 @@
                 <span id="sie-lwd"></span>
             </span>
         </div>
-        <div class="sie-cc">
-            <button data-value="3" class="sie-dc">Eraser</button>
+        <div class="sie-ib sie-bc">
+            <div class="sie-cc">
+                <button data-value="3" class="sie-dc">Eraser</button>
+            </div>
+            <div class="sie-cc">
+                <button data-value="0" class="sie-dc">Pencil</button>
+            </div>
+            <div class="sie-cc">
+                <button data-value="1" class="sie-dc">Line</button>
+            </div>
         </div>
-        <div class="sie-cc">
-            <button data-value="0" class="sie-dc">Pencil</button>
-        </div>
-        <div class="sie-cc">
-            <button data-value="1" class="sie-dc">Line</button>
-        </div>
-        <div class="sie-cc">
-            <button data-value="2" class="sie-dc">Arrow</button>
+        <div class="sie-ib sie-bc">
+            <div class="sie-cc">
+                <button data-value="2" class="sie-dc">Arrow</button>
+            </div>
+            <div class="sie-cc">
+                <button data-value="4" class="sie-dc">Square</button>
+            </div>
+            <div class="sie-cc">
+                <button data-value="5" class="sie-dc">Circle</button>
+            </div>
         </div>
         <hr />
         <div class="sie-cc">
-            <button id="sie-sb">Save</button>
-            <button id="sie-d">Download</button>
+            <div class="sie-ib sie-bc">
+                <button id="sie-sb">Save</button>
+            </div>
+            <div class="sie-ib sie-bc">
+                <button id="sie-d">Download</button>
+            </div>
         </div>
     </div>
 </div>

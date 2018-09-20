@@ -33,6 +33,9 @@
 .sie-ib{
   display: inline-block;
 }
+.sie-cc button{
+  width: 80px;
+}
 .sie-h{
   display: none !important;
 }
@@ -42,8 +45,8 @@
 #sie-c {
   vertical-align: top;
   margin-left: 10px;
-  min-width: 155px;
-  width: 155px;
+  min-width: 180px;
+  width: 180px;
 }
 #sie-c .sie-cc{
   margin-top: 10px;
@@ -55,5 +58,9 @@
   border: #767676 2px solid;
 }
 #sie-lw{
-  width: 50px;
+  width: 70px;
+}
+.sie-bc{
+  margin-right: 10px;
+  width: 80px;
 }
