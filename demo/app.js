@@ -4,8 +4,8 @@ var settings = {
     width: 300,
     showSaveButton: true,
     showDownloadButton: true,
-    defaultDrawingControl: 'line',
-    defaultDrawingColor: '#FFFFFF',
+    defaultDrawingControl: 'arrow',
+    defaultDrawingColor: '#32CD32',
     defaultDrawingThickness: 7
 };
 var imageEditor = simpleImageEditor(settings);

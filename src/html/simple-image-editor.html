@@ -1,7 +1,10 @@
 <input id="sie-fu" type="file" />
 <br />
 <div id="sie">
+    <canvas id="sie-i-cnv" class="sie-cnt"></canvas>
     <canvas id="sie-cnv" class="sie-cnt"></canvas>
+    <canvas id="sie-h-cnv" class="sie-cnt"></canvas>
+    <canvas id="sie-f-cnv" class="sie-cnt"></canvas>
     <div id="sie-cnt" class="sie-cnt sie-h">
         <img id="sie-hp">
         <a id="sie-hsl"></a>
@@ -22,10 +25,16 @@
             </span>
         </div>
         <div class="sie-cc">
+            <button data-value="3" class="sie-dc">Eraser</button>
+        </div>
+        <div class="sie-cc">
             <button data-value="0" class="sie-dc">Pencil</button>
         </div>
         <div class="sie-cc">
             <button data-value="1" class="sie-dc">Line</button>
+        </div>
+        <div class="sie-cc">
+            <button data-value="2" class="sie-dc">Arrow</button>
         </div>
         <hr />
         <div class="sie-cc">

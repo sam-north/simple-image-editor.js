@@ -2,10 +2,18 @@ function simpleImageEditor(settings) {
   var configSettings = settings || {};
   var drawingControlTypes = {
     pencil: 0,
-    line: 1
+    line: 1,
+    arrow: 2,
+    eraser: 3
   };
   var canvas,
     canvasContext,
+    hiddenDrawingCanvas,
+    hiddenDrawingCanvasContext,
+    imgCanvas,
+    imgCanvasContext,
+    finalCanvas,
+    finalCanvasContext,
     canvasStrokeStyle,
     canvasStrokeLineWidth = configSettings.defaultDrawingThickness || 6,
     mouseInfo,
@@ -46,7 +54,7 @@ function simpleImageEditor(settings) {
     var imageScaledHeight = hiddenImagePreview.height / imageProportionScale;
     var heightDifference = canvas.height - imageScaledHeight;
     var heightOffset = heightDifference > 0 && (imageRotationAngle === 90 || imageRotationAngle === 180) ? heightDifference : 0;
-    canvasContext.drawImage(hiddenImagePreview, 0, heightOffset, canvas.width, imageScaledHeight);
+    imgCanvasContext.drawImage(hiddenImagePreview, 0, 0, canvas.width, imageScaledHeight);
   }
 
   function loadImageSetup() {
@@ -54,7 +62,7 @@ function simpleImageEditor(settings) {
     controls.classList.remove('sie-h');
     controls.classList.add('sie-ib');
     imageRotationAngle = 0;
-    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    imgCanvasContext.clearRect(0, 0, canvas.width, canvas.height);
     initializeImageEditorControlEventListeners();
   }
 
@@ -90,18 +98,33 @@ function simpleImageEditor(settings) {
   }
 
   function handleRotateButtonClick(e) {
-    canvasContext.save();
+    imgCanvasContext.save();
     imageRotationAngle = (imageRotationAngle + 90) % 360;
     var radianRotationAngle = imageRotationAngle * Math.PI / 180;
-    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    imgCanvasContext.clearRect(0, 0, imgCanvas.width, imgCanvas.height);
     var xTranslation = imageRotationAngle === 90 || imageRotationAngle === 180 ? canvas.width : 0;
     var yTranslation = imageRotationAngle === 180 || imageRotationAngle === 270 ? canvas.height : 0;
-    canvasContext.translate(xTranslation, yTranslation);
-    canvasContext.rotate(radianRotationAngle);
+    imgCanvasContext.translate(xTranslation, yTranslation);
+    imgCanvasContext.rotate(radianRotationAngle);
     drawImageToCanvas();
-    canvasContext.rotate(-radianRotationAngle);
-    canvasContext.translate(-xTranslation, yTranslation);
-    canvasContext.restore();
+    imgCanvasContext.rotate(-radianRotationAngle);
+    imgCanvasContext.translate(-xTranslation, yTranslation);
+    imgCanvasContext.restore();
+
+
+    var hiddenRotationRadian = (90 * Math.PI / 180);
+    hiddenDrawingCanvasContext.translate(hiddenDrawingCanvas.width, 0);
+    hiddenDrawingCanvasContext.rotate(hiddenRotationRadian);
+    hiddenDrawingCanvasContext.clearRect(0, 0, hiddenDrawingCanvas.width, hiddenDrawingCanvas.height);
+    hiddenDrawingCanvasContext.drawImage(canvas, 0, 0);
+    hiddenDrawingCanvasContext.rotate(-hiddenRotationRadian);
+    hiddenDrawingCanvasContext.translate(-hiddenDrawingCanvas.width, 0);
+    hiddenDrawingCanvasContext.restore();
+
+
+    canvasContext.clearRect(0, 0, canvas.width, canvas.height);
+    canvasContext.drawImage(hiddenDrawingCanvas, 0, 0);
+    hiddenDrawingCanvasContext.clearRect(0, 0, hiddenDrawingCanvas.width, hiddenDrawingCanvas.height);
   }
 
   function getCurrentMouseX(e) {
@@ -121,12 +144,18 @@ function simpleImageEditor(settings) {
 
   function drawPathOnCanvas() {
     canvasContext.beginPath();
+
     canvasContext.moveTo(mouseInfo.pX, mouseInfo.pY);
     canvasContext.lineTo(mouseInfo.X, mouseInfo.Y);
     canvasContext.strokeStyle = canvasStrokeStyle;
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+  }
+
+  function drawEraserOnCanvas() {
+    var halfLineWidth = canvasStrokeLineWidth / 2;
+    canvasContext.clearRect(mouseInfo.X - halfLineWidth, mouseInfo.Y - halfLineWidth, canvasStrokeLineWidth, canvasStrokeLineWidth);
   }
 
   function drawLineOnCanvas() {
@@ -137,6 +166,39 @@ function simpleImageEditor(settings) {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+  }
+
+  function drawArrowOnCanvas() {
+    canvasContext.beginPath();
+    canvasContext.moveTo(mouseInfo.beginX, mouseInfo.beginY);
+    canvasContext.lineTo(mouseInfo.endX, mouseInfo.endY);
+    canvasContext.strokeStyle = canvasStrokeStyle;
+    canvasContext.lineWidth = canvasStrokeLineWidth;
+    canvasContext.stroke();
+    canvasContext.closePath();
+
+    console.log('Arrow draw: ', 'beginX: ' + mouseInfo.beginX, 'endX: ' + mouseInfo.endX, 'beginY: ' + mouseInfo.beginY, 'endY: ' + mouseInfo.endY);
+    var slope = (mouseInfo.endY - mouseInfo.beginY) / (mouseInfo.endX - mouseInfo.beginX);
+    var distanceOfLine = Math.sqrt(Math.pow(mouseInfo.endX - mouseInfo.beginX, 2) + Math.pow(mouseInfo.endY - mouseInfo.beginY, 2));
+    var halfSlope = slope / 2;
+    var doubleSlope = slope * 2;
+
+    console.log('slope:' + slope);
+    console.log('distanceOfLine:' + distanceOfLine);
+    console.log('halfSlope:' + halfSlope);
+    console.log('doubleSlope:' + doubleSlope);
+    var yIntercept = mouseInfo.endY - (mouseInfo.endX * slope);
+    console.log('y=mx+b: with ' + mouseInfo.endY + ' - (' + mouseInfo.endX + ' * ' + slope + ') = ' + yIntercept);
+    var xAtYIntercept = (0 - yIntercept) / slope;
+    console.log('YIntercept = (' + xAtYIntercept + ',' + yIntercept + ')');
+
+    // canvasContext.beginPath();
+    // canvasContext.moveTo(xAtYIntercept, yIntercept);
+    // canvasContext.lineTo(mouseInfo.beginX, mouseInfo.beginY);
+    // canvasContext.strokeStyle = '#FF0000';
+    // canvasContext.lineWidth = canvasStrokeLineWidth;
+    // canvasContext.stroke();
+    // canvasContext.closePath();
   }
 
   function handleImageEditorMouseBegin(e) {
@@ -152,6 +214,8 @@ function simpleImageEditor(settings) {
       setMouseInfo(e);
       if (currentDrawingControl === drawingControlTypes.pencil) {
         drawPathOnCanvas();
+      } else if (currentDrawingControl === drawingControlTypes.eraser) {
+        drawEraserOnCanvas();
       }
     }
   }
@@ -161,6 +225,8 @@ function simpleImageEditor(settings) {
     mouseInfo.endY = getCurrentMouseY(e);
     if (isDrawing && currentDrawingControl === drawingControlTypes.line)
       drawLineOnCanvas();
+    else if (isDrawing && currentDrawingControl === drawingControlTypes.arrow)
+      drawArrowOnCanvas();
     isDrawing = false;
     resetMouseInfo();
   }
@@ -176,8 +242,11 @@ function simpleImageEditor(settings) {
 
     var editedFileName = decodeURI(uneditedImageFileNameNoExtension + '.' + editedImageFileType);
 
+    finalCanvasContext.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
+    finalCanvasContext.drawImage(imgCanvas, 0, 0);
+    finalCanvasContext.drawImage(canvas, 0, 0);
 
-    var savedUrlOctet = canvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
+    var savedUrlOctet = finalCanvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
     hiddenLink.setAttribute('download', editedFileName);
     hiddenLink.setAttribute('href', savedUrlOctet);
 
@@ -288,6 +357,7 @@ function simpleImageEditor(settings) {
   var containerElement = document.getElementById(configSettings.containerId);
   containerElement.innerHTML = generateCss() + generateHTML();
   resetMouseInfo();
+
   var imageUploadElement = document.getElementById("sie-fu");
   imageUploadElement.addEventListener('input', loadImageFromFileInput, false);
   var imagePreview = document.getElementById('sie-hp');
@@ -297,6 +367,21 @@ function simpleImageEditor(settings) {
   canvas.width = configSettings.width || 300;
   canvas.height = configSettings.height || canvas.width;
   canvasContext = canvas.getContext('2d');
+
+  hiddenDrawingCanvas = document.getElementById('sie-h-cnv');
+  hiddenDrawingCanvas.width = configSettings.width || 300;
+  hiddenDrawingCanvas.height = configSettings.height || hiddenDrawingCanvas.width;
+  hiddenDrawingCanvasContext = hiddenDrawingCanvas.getContext('2d');
+
+  imgCanvas = document.getElementById('sie-i-cnv');
+  imgCanvas.width = configSettings.width || 300;
+  imgCanvas.height = configSettings.height || imgCanvas.width;
+  imgCanvasContext = imgCanvas.getContext('2d');
+
+  finalCanvas = document.getElementById('sie-f-cnv');
+  finalCanvas.width = configSettings.width || 300;
+  finalCanvas.height = configSettings.height || finalCanvas.width;
+  finalCanvasContext = finalCanvas.getContext('2d');
 
   return {
     saveImage: handleImageEditorSave,
