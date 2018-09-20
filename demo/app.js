@@ -1,12 +1,12 @@
 var settings = {
     containerId: 'simple-image-editor',
     exportImageFileType: 'png',
-    width: 300,
+    width: 800,
     showSaveButton: true,
     showDownloadButton: true,
-    defaultDrawingControl: 'line',
-    defaultDrawingColor: '#FFFFFF',
-    defaultDrawingThickness: 7
+    defaultDrawingControl: 'arrow',
+    defaultDrawingColor: '#ffff00',
+    defaultDrawingThickness: 4
 };
 var imageEditor = simpleImageEditor(settings);
 
