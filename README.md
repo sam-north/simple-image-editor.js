@@ -25,13 +25,21 @@ Lightweight .js plugin for generating a simple image editor with some basic imag
 
 ### Configuration Options
 
-Setting name | Value
------------- | -------------
-containerId | Target HTML element id for containing the generated the plugin 
-exportImageFileType | default **png**
-width | default **300**
+
+######containerId
+Type: ```javascript String ```
+
+Target HTML element id for containing the generated the plugin 
+
+######exportImageFileType
+Type: ```javascript String ```
+Default ```javascript 'png' ```
+
+######width |
+Type: ```javascript Number ```
+Default: ```javascript 300 ```
 showSaveButton | default **false**
 showDownloadButton | default **true**
 defaultDrawingControl | default **pencil**
-defaultDrawingColor | default **FF0000**
+defaultDrawingColor | default **\#FF0000**
 defaultDrawingThickness | default **6**
