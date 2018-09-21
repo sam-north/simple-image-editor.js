@@ -1,7 +1,7 @@
 var settings = {
     containerId: 'simple-image-editor',
     exportImageFileType: 'png',
-    width: 800,
+    width: 900,
     showSaveButton: true,
     showDownloadButton: true,
     defaultDrawingControl: 'arrow',

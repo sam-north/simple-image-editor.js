@@ -27,7 +27,7 @@ function simpleImageEditor(settings) {
     showSaveButton = configSettings.showSaveButton !== undefined ? configSettings.showSaveButton : false,
     imageRotationAngle = 0;
 
-  function CLIPBOARD_CLASS() {
+  function clipboardPaste() {
     var _self = this;
     var ctrl_pressed = false;
     var command_pressed = false;
@@ -548,10 +548,8 @@ function simpleImageEditor(settings) {
         element.addEventListener('click', handleDrawingControlClick, false);
       }
     }
-    if (configSettings.defaultDrawingControl && configSettings.defaultDrawingControl !== '')
-      setCurrentDrawingControl(configSettings.defaultDrawingControl);
-    else
-      document.getElementById('sie-c').getElementsByClassName('sie-dc')[0].click();
+    var initialDrawingControl = (configSettings.defaultDrawingControl && configSettings.defaultDrawingControl !== '') ? configSettings.defaultDrawingControl : drawingControlTypes.pencil;
+    setCurrentDrawingControl(initialDrawingControl);
   }
 
   function generateCss() {
@@ -575,25 +573,25 @@ function simpleImageEditor(settings) {
 
   canvas = document.getElementById('sie-cnv');
   canvas.width = configSettings.width || 300;
-  canvas.height = configSettings.height || canvas.width;
+  canvas.height = canvas.width;
   canvasContext = canvas.getContext('2d');
 
   hiddenDrawingCanvas = document.getElementById('sie-h-cnv');
   hiddenDrawingCanvas.width = configSettings.width || 300;
-  hiddenDrawingCanvas.height = configSettings.height || hiddenDrawingCanvas.width;
+  hiddenDrawingCanvas.height = hiddenDrawingCanvas.width;
   hiddenDrawingCanvasContext = hiddenDrawingCanvas.getContext('2d');
 
   imgCanvas = document.getElementById('sie-i-cnv');
   imgCanvas.width = configSettings.width || 300;
-  imgCanvas.height = configSettings.height || imgCanvas.width;
+  imgCanvas.height = imgCanvas.width;
   imgCanvasContext = imgCanvas.getContext('2d');
 
   finalCanvas = document.getElementById('sie-f-cnv');
   finalCanvas.width = configSettings.width || 300;
-  finalCanvas.height = configSettings.height || finalCanvas.width;
+  finalCanvas.height = finalCanvas.width;
   finalCanvasContext = finalCanvas.getContext('2d');
 
-  new CLIPBOARD_CLASS();
+  new clipboardPaste();
 
   return {
     saveImage: handleImageEditorSave,
