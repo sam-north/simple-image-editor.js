@@ -1,5 +1,25 @@
-function simpleImageEditor(settings) {
-  var configSettings = settings || {};
+function simpleImageEditor() {
+  var configSettings;
+  if (arguments.length === 1 && typeof (arguments[0]) === 'string') {
+    configSettings = {
+      containerId: arguments[0]
+    };
+  }
+  else {
+    for (var i = 0; i < arguments.length; i++) {
+      if (typeof (arguments[i]) === 'object') {
+        configSettings = arguments[i];
+        break;
+      }
+    }
+    configSettings = configSettings || {};
+    for (var j = 0; j < arguments.length; j++) {
+      if (typeof (arguments[j]) === 'string') {
+        configSettings.containerId = arguments[j];
+        break;
+      }
+    }
+  }
   var drawingControlTypes = {
     pencil: 0,
     line: 1,
@@ -27,7 +47,7 @@ function simpleImageEditor(settings) {
     showSaveButton = configSettings.showSaveButton !== undefined ? configSettings.showSaveButton : false,
     imageRotationAngle = 0;
 
-  function CLIPBOARD_CLASS() {
+  function clipboardPaste() {
     var _self = this;
     var ctrl_pressed = false;
     var command_pressed = false;
@@ -187,14 +207,26 @@ function simpleImageEditor(settings) {
   }
 
   function loadImageSetup() {
-    var controls = document.getElementById('sie-c');
-    controls.classList.remove('sie-h');
-    controls.classList.add('sie-ib');
+    toggleControls((configSettings.hideAllControls !== undefined && configSettings.hideAllControls === true) ? 'hide' : 'show');
     imageRotationAngle = 0;
     imgCanvasContext.clearRect(0, 0, imgCanvas.width, imgCanvas.height);
     canvasContext.clearRect(0, 0, canvas.width, canvas.height);
     initializeImageEditorControlEventListeners();
   }
+
+  function toggleControls(showOrHideParam) {
+    var showOrHide = showOrHideParam;
+    var controls = document.getElementById('sie-c');
+    var hideClass = 'sie-h';
+    var showClass = 'sie-ib';
+    if (showOrHideParam === undefined)
+      showOrHide = controls.classList.contains(hideClass) ? 'show' : 'hide';
+    var addClass = showOrHide === 'show' ? showClass : hideClass;
+    var removeClass = showOrHide === 'show' ? hideClass : showClass;
+    controls.classList.remove(removeClass);
+    controls.classList.add(addClass);
+  }
+
 
   function buildFileName(fullName) {
     if (fullName && fullName !== '' && fullName.indexOf('blob:') !== 0) {
@@ -439,8 +471,10 @@ function simpleImageEditor(settings) {
     resetMouseInfo();
   }
 
-  function setColorForImageEditor() {
+  function setColorForImageEditor(color) {
     var colorPickerElement = document.getElementById('sie-cp');
+    if (color)
+      colorPickerElement.value = color;
     canvasStrokeStyle = colorPickerElement.value;
   }
 
@@ -497,14 +531,18 @@ function simpleImageEditor(settings) {
     }
   }
 
-  function setLineWidthValueDisplay() {
+  function setDrawingThickness(width, isManuallySet) {
+    canvasStrokeLineWidth = Number(width);
     var lineWidthDisplayElement = document.getElementById('sie-lwd');
+    if (isManuallySet) {
+      var lineWidthSlider = document.getElementById('sie-lw');
+      lineWidthSlider.value = canvasStrokeLineWidth;
+    }
     lineWidthDisplayElement.textContent = canvasStrokeLineWidth;
   }
 
   function handleLineWidthChange(e) {
-    canvasStrokeLineWidth = Number(e.target.value);
-    setLineWidthValueDisplay();
+    setDrawingThickness(e.target.value);
   }
 
   function initializeImageEditorControlEventListeners() {
@@ -516,7 +554,7 @@ function simpleImageEditor(settings) {
     var lineWidthElement = document.getElementById('sie-lw');
     lineWidthElement.value = canvasStrokeLineWidth;
     lineWidthElement.addEventListener('change', handleLineWidthChange, false);
-    setLineWidthValueDisplay();
+    setDrawingThickness(canvasStrokeLineWidth, true);
 
     var colorPickerElement = document.getElementById('sie-cp');
     colorPickerElement.addEventListener('change', setColorForImageEditor, false);
@@ -533,7 +571,7 @@ function simpleImageEditor(settings) {
     if (showSaveButton)
       imageEditorSaveButton.addEventListener('click', handleImageEditorSave, false);
     else
-      imageEditorSaveButton.classList.add('sie-h');
+      imageEditorSaveButton.parentElement.classList.add('sie-h');
 
     var iamgeEditorDownloadButton = document.getElementById('sie-d');
     if (showDownloadButton)
@@ -548,10 +586,8 @@ function simpleImageEditor(settings) {
         element.addEventListener('click', handleDrawingControlClick, false);
       }
     }
-    if (configSettings.defaultDrawingControl && configSettings.defaultDrawingControl !== '')
-      setCurrentDrawingControl(configSettings.defaultDrawingControl);
-    else
-      document.getElementById('sie-c').getElementsByClassName('sie-dc')[0].click();
+    var initialDrawingControl = (configSettings.defaultDrawingControl && configSettings.defaultDrawingControl !== '') ? configSettings.defaultDrawingControl : drawingControlTypes.pencil;
+    setCurrentDrawingControl(initialDrawingControl);
   }
 
   function generateCss() {
@@ -575,28 +611,34 @@ function simpleImageEditor(settings) {
 
   canvas = document.getElementById('sie-cnv');
   canvas.width = configSettings.width || 300;
-  canvas.height = configSettings.height || canvas.width;
+  canvas.height = canvas.width;
   canvasContext = canvas.getContext('2d');
 
   hiddenDrawingCanvas = document.getElementById('sie-h-cnv');
   hiddenDrawingCanvas.width = configSettings.width || 300;
-  hiddenDrawingCanvas.height = configSettings.height || hiddenDrawingCanvas.width;
+  hiddenDrawingCanvas.height = hiddenDrawingCanvas.width;
   hiddenDrawingCanvasContext = hiddenDrawingCanvas.getContext('2d');
 
   imgCanvas = document.getElementById('sie-i-cnv');
   imgCanvas.width = configSettings.width || 300;
-  imgCanvas.height = configSettings.height || imgCanvas.width;
+  imgCanvas.height = imgCanvas.width;
   imgCanvasContext = imgCanvas.getContext('2d');
 
   finalCanvas = document.getElementById('sie-f-cnv');
   finalCanvas.width = configSettings.width || 300;
-  finalCanvas.height = configSettings.height || finalCanvas.width;
+  finalCanvas.height = finalCanvas.width;
   finalCanvasContext = finalCanvas.getContext('2d');
 
-  new CLIPBOARD_CLASS();
+  new clipboardPaste();
 
   return {
     saveImage: handleImageEditorSave,
-    loadImage: loadImageFromUrl
+    loadImage: loadImageFromUrl,
+    rotateRight: function () { rotateEverything(1); },
+    rotateLeft: function () { rotateEverything(-1); },
+    setColor: setColorForImageEditor,
+    setDrawingThickness: function (width) { setDrawingThickness(width, true); },
+    setDrawingControl: setCurrentDrawingControl,
+    toggleControls: toggleControls
   };
 }
