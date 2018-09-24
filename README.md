@@ -2,6 +2,9 @@
 ------
 Lightweight .js plugin for generating a simple image editor with some basic image editing functions
 
+## Demo 
+[Visit the demo](http://sammynorth.com/#samnorth/simple-image-editor) to see the plugin in action
+
 ## Getting Started
 ------
 Load the simple-image-editor dist minified script within the page of the app
@@ -113,7 +116,7 @@ Default: `6`
 |loadImage(image) | Takes a javascript Image as a parameter to load an image programmatically|
 |rotateRight() | Rotates the edited image 90&deg; clockwise|
 |rotateLeft() | Rotates the edited image 90&deg; counterclockwise|
-|setColor(color) | Sets the drawing tools to use the specified hex color (ex: \'#000000\')|
+|setColor(color) | Sets the drawing tools to use the specified hex color|
 |setDrawingThickness(lineWidth) | Takes a Number and sets the line width for drawing tools to the specified width|
 |setDrawingControl(controlType) | Sets the current drawing tool to the specified control type as a Number or String (see above for drawing control types|
 |toggleControls(showHide)| Sets the control container display based on the passed in.  Expected parameters are ('show'), ('hide') and () where parameterless just toggles from the current visibility state|
