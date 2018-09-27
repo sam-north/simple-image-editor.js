@@ -473,7 +473,7 @@ function simpleImageEditor() {
 
   function setColorForImageEditor(color) {
     var colorPickerElement = document.getElementById('sie-cp');
-    if (color)
+    if (color !== undefined && color !== '' && !(color instanceof Event))
       colorPickerElement.value = color;
     canvasStrokeStyle = colorPickerElement.value;
   }
