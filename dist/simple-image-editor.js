@@ -39,6 +39,8 @@ function simpleImageEditor() {
     canvasStrokeStyle,
     canvasStrokeLineWidth = configSettings.defaultDrawingThickness || 6,
     mouseInfo,
+    imageContentMaxX,
+    imageContentMaxY,
     isDrawing = false,
     uneditedImageFileNameNoExtension,
     uneditedImageFileName,
@@ -204,6 +206,8 @@ function simpleImageEditor() {
       imageScaledWidth = hiddenImagePreview.width / imageProportionScale;
     }
     imgCanvasContext.drawImage(hiddenImagePreview, 0, 0, imageScaledWidth, imageScaledHeight);
+    imageContentMaxX = imageScaledWidth;
+    imageContentMaxY = imageScaledHeight;
   }
 
   function loadImageSetup() {
@@ -226,7 +230,6 @@ function simpleImageEditor() {
     controls.classList.remove(removeClass);
     controls.classList.add(addClass);
   }
-
 
   function buildFileName(fullName) {
     if (fullName && fullName !== '' && fullName.indexOf('blob:') !== 0) {
@@ -258,6 +261,7 @@ function simpleImageEditor() {
       endY: 0
     };
   }
+
   function rotateEverything(direction) {
     imgCanvasContext.save();
     var directionAngleModifier = (90 * direction);
@@ -275,6 +279,7 @@ function simpleImageEditor() {
     imgCanvasContext.restore();
 
     var hiddenRotationRadian = (directionAngleModifier * Math.PI / 180);
+
     var xDrawingTranslate = direction > 0 ? hiddenDrawingCanvas.width : 0;
     var yDrawingTranslate = direction > 0 ? 0 : hiddenDrawingCanvas.height;
     hiddenDrawingCanvasContext.translate(xDrawingTranslate, yDrawingTranslate);
@@ -313,6 +318,15 @@ function simpleImageEditor() {
     mouseInfo.Y = getCurrentMouseY(e);
   }
 
+  function setMaxContentAmount(currentX, currentY) {
+    if (currentX > imageContentMaxX) {
+      imageContentMaxX = currentX;
+    }
+    if (currentY > imageContentMaxY) {
+      imageContentMaxY = currentY;
+    }
+  }
+
   function drawPathOnCanvas() {
     canvasContext.beginPath();
     canvasContext.moveTo(mouseInfo.pX, mouseInfo.pY);
@@ -321,12 +335,14 @@ function simpleImageEditor() {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+    setMaxContentAmount(mouseInfo.X, mouseInfo.Y);
   }
 
   function drawEraserOnCanvas() {
     var expandedLineWidth = canvasStrokeLineWidth * 3;
     canvasContext.clearRect(mouseInfo.X - canvasStrokeLineWidth, mouseInfo.Y - canvasStrokeLineWidth, expandedLineWidth, expandedLineWidth);
   }
+
   function drawSquareOnCanvas() {
     canvasContext.beginPath();
     canvasContext.moveTo(mouseInfo.beginX, mouseInfo.beginY);
@@ -338,6 +354,8 @@ function simpleImageEditor() {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+    setMaxContentAmount(mouseInfo.beginX, mouseInfo.beginY);
+    setMaxContentAmount(mouseInfo.endX, mouseInfo.endY);
   }
 
   function drawCircleOnCanvas() {
@@ -354,6 +372,9 @@ function simpleImageEditor() {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+
+    setMaxContentAmount(mouseInfo.beginX, mouseInfo.beginY);
+    setMaxContentAmount(mouseInfo.endX, mouseInfo.endY);
   }
 
   function drawLineOnCanvas() {
@@ -364,6 +385,8 @@ function simpleImageEditor() {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+    setMaxContentAmount(mouseInfo.beginX, mouseInfo.beginY);
+    setMaxContentAmount(mouseInfo.endX, mouseInfo.endY);
   }
 
   function drawArrowOnCanvas() {
@@ -397,6 +420,9 @@ function simpleImageEditor() {
     canvasContext.fillStyle = canvasStrokeStyle;
     canvasContext.fill();
     canvasContext.closePath();
+
+    setMaxContentAmount(mouseInfo.beginX, mouseInfo.beginY);
+    setMaxContentAmount(mouseInfo.endX, mouseInfo.endY);
   }
 
   function getPerpendicularLinePointsForTriangle(x, y, distance, slope) {
@@ -488,9 +514,15 @@ function simpleImageEditor() {
     finalCanvasContext.drawImage(imgCanvas, 0, 0);
     finalCanvasContext.drawImage(canvas, 0, 0);
 
-    var savedUrlOctet = finalCanvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
+    var offscreenResizedCanvas = document.createElement('canvas');
+    offscreenResizedCanvas.width = imageContentMaxX;
+    offscreenResizedCanvas.height = imageContentMaxY;
+    offscreenResizedCanvas.getContext('2d').drawImage(finalCanvas, 0, 0);
+
+    var savedUrlOctet = offscreenResizedCanvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
     hiddenLink.setAttribute('download', editedFileName);
     hiddenLink.setAttribute('href', savedUrlOctet);
+    offscreenResizedCanvas.remove();
 
     return {
       originalFileName: decodeURI(uneditedImageFileName),
