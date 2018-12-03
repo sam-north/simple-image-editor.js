@@ -560,7 +560,7 @@ function simpleImageEditor() {
     var hiddenLink = document.getElementById('sie-hsl');
     var editedImageFileType = configSettings.exportImageFileType || 'png';
 
-    var editedFileName = decodeURI(uneditedImageFileNameNoExtension + '.' + editedImageFileType);
+    var editedFileName = decodeURI(uneditedImageFileNameNoExtension + '.' + editedImageFileType).replace('+', '');
 
     finalCanvasContext.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
     finalCanvasContext.drawImage(imgCanvas, 0, 0);
