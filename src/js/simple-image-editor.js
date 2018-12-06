@@ -556,6 +556,25 @@ function simpleImageEditor() {
     canvasStrokeStyle = colorPickerElement.value;
   }
 
+  function setColorOfFallbackPicker(color) {
+    var fallbackColorPickerElement = document.getElementById('sie-cps');
+    if (color !== undefined && color !== '' && !(color instanceof Event))
+      fallbackColorPickerElement.value = color;
+    for (var optionIndex = 0; optionIndex < fallbackColorPickerElement.options.length; optionIndex++) {
+      var currentOption = fallbackColorPickerElement.options[optionIndex];
+      if (currentOption.value === fallbackColorPickerElement.value) {
+        fallbackColorPickerElement.style.backgroundColor = currentOption.style.backgroundColor;
+        fallbackColorPickerElement.style.color = currentOption.style.color;
+        break;
+      }
+    }
+    setColorForImageEditor(fallbackColorPickerElement.value);
+  }
+
+  function handleFallbackColorSelectorChange(e) {
+    setColorOfFallbackPicker(e.target.value);
+  }
+
   function handleImageEditorSave() {
     var hiddenLink = document.getElementById('sie-hsl');
     var editedImageFileType = configSettings.exportImageFileType || 'png';
@@ -591,6 +610,21 @@ function simpleImageEditor() {
       blob: blob,
       editedFileName: editedFileName
     };
+  }
+
+  function doesBrowserSupportColorPicker() {
+    var inputElem = document.createElement('input');
+
+    inputElem.setAttribute('type', 'color');
+    var isColorElementType = inputElem.type !== 'text';
+
+    if (isColorElementType) {
+      var smile = ':)';
+      inputElem.value = smile;
+      isColorElementType = inputElem.value != smile;
+    }
+
+    return isColorElementType;
   }
 
   function handleImageEditorDownload() {
@@ -655,9 +689,29 @@ function simpleImageEditor() {
     setDrawingThickness(canvasStrokeLineWidth, true);
 
     var colorPickerElement = document.getElementById('sie-cp');
-    colorPickerElement.addEventListener('change', setColorForImageEditor, false);
-    colorPickerElement.value = configSettings.defaultDrawingColor || '#FF0000';
-    setColorForImageEditor();
+    var colorPickerFallbackSelect = document.getElementById('sie-cps');
+    if (doesBrowserSupportColorPicker()) {
+      colorPickerElement.addEventListener('change', setColorForImageEditor, false);
+      colorPickerElement.value = configSettings.defaultDrawingColor || '#FF0000';
+      colorPickerFallbackSelect.style.display = 'none';
+      colorPickerElement.style.display = 'initial';
+      setColorForImageEditor();
+    } else {
+      colorPickerFallbackSelect.addEventListener('change', handleFallbackColorSelectorChange, false);
+      colorPickerFallbackSelect.value = 'red';
+      if (configSettings.defaultDrawingColor && configSettings.defaultDrawingColor !== '') {
+        for (var optionIndex = 0; optionIndex < colorPickerFallbackSelect.options.length; optionIndex++) {
+          var selectOption = colorPickerFallbackSelect.options[optionIndex];
+          if (selectOption.value === configSettings.defaultDrawingColor) {
+            colorPickerFallbackSelect.value = selectOption.value;
+            break;
+          }
+        }
+      }
+      colorPickerElement.style.display = 'none';
+      colorPickerFallbackSelect.style.display = 'initial';
+      setColorOfFallbackPicker();
+    }
 
     canvas.addEventListener('mousedown', handleImageEditorMouseBegin, false);
     canvas.addEventListener('mousemove', handleImageEditorMouseMove, false);
