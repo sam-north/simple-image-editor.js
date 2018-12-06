@@ -560,7 +560,12 @@ function simpleImageEditor() {
     var hiddenLink = document.getElementById('sie-hsl');
     var editedImageFileType = configSettings.exportImageFileType || 'png';
 
-    var editedFileName = decodeURI(uneditedImageFileNameNoExtension + '.' + editedImageFileType).replace('+', '');
+    var editedFileName = decodeURI(uneditedImageFileNameNoExtension + '.' + editedImageFileType);
+    var removalCharacters = ['#', '%', '&', '{', '}', '\\', '>', '<', '*', '?', '/', ' ', '$', '!', "'", '"', ':', '@', '+'];
+    for (var i = 0; i < removalCharacters.length; i++) {
+      var specialCharacter = removalCharacters[i];
+      editedFileName = editedFileName.replace(specialCharacter, '');
+    }
 
     finalCanvasContext.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
     finalCanvasContext.drawImage(imgCanvas, 0, 0);
@@ -574,21 +579,28 @@ function simpleImageEditor() {
     offscreenResizedCanvas.getContext('2d').drawImage(finalCanvas, imageContentOriginX, imageContentOriginY, exportWidth, exportHeight, 0, 0, exportWidth, exportHeight);
 
     var savedUrlOctet = offscreenResizedCanvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
+    var blob;
+    if (offscreenResizedCanvas.msToBlob)
+      blob = offscreenResizedCanvas.msToBlob();
     hiddenLink.setAttribute('download', editedFileName);
     hiddenLink.setAttribute('href', savedUrlOctet);
-    offscreenResizedCanvas.remove();
 
     return {
       originalFileName: decodeURI(uneditedImageFileName),
       base64Image: savedUrlOctet,
+      blob: blob,
       editedFileName: editedFileName
     };
   }
 
   function handleImageEditorDownload() {
-    handleImageEditorSave();
-    var hiddenLink = document.getElementById('sie-hsl');
-    hiddenLink.click();
+    var imageInfo = handleImageEditorSave();
+    if (imageInfo.blob)
+      window.navigator.msSaveBlob(imageInfo.blob, imageInfo.editedFileName);
+    else {
+      var hiddenLink = document.getElementById('sie-hsl');
+      hiddenLink.click();
+    }
   }
 
   function handleDrawingControlClick(e) {
