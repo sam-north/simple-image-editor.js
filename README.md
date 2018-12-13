@@ -42,9 +42,11 @@ Instantiate!
 * Paste image from clipboard
 * Load existing image through javascript
 * Save edited image as base64 
+* Save edited image as blob
 * Download edited image
 * Rotate image
 * Draw on image with different drawing tools
+* Works in IE by downloading as blob and uses a limited color picker select instead of the HTML5 input color.
 
 #### Drawing tools
 ------
@@ -112,7 +114,7 @@ Default: `6`
 
 | name | description |
 |------|-------------|
-|saveImage() | Saves the edited image in its current state and will return and object with an originalFileName, base64Image, and editedFileName|
+|saveImage() | Saves the edited image in its current state and will return and object with an originalFileName, base64Image, blob (only if msToBlob is available which should only be in IE), and editedFileName|
 |loadImage(image) | Takes a javascript Image as a parameter to load an image programmatically|
 |rotateRight() | Rotates the edited image 90&deg; clockwise|
 |rotateLeft() | Rotates the edited image 90&deg; counterclockwise|

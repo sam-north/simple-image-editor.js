@@ -39,6 +39,10 @@ function simpleImageEditor() {
     canvasStrokeStyle,
     canvasStrokeLineWidth = configSettings.defaultDrawingThickness || 6,
     mouseInfo,
+    imageContentMaxX,
+    imageContentMaxY,
+    imageContentOriginX,
+    imageContentOriginY,
     isDrawing = false,
     uneditedImageFileNameNoExtension,
     uneditedImageFileName,
@@ -191,7 +195,7 @@ function simpleImageEditor() {
     setHiddenImgPreviewSrc(e.target.result);
   }
 
-  function drawImageToCanvas() {
+  function drawImageToCanvas(resetOriginAndMax) {
     var hiddenImagePreview = document.getElementById('sie-hp');
     var imageProportionScale = hiddenImagePreview.width / imgCanvas.width;
     var imageScaledWidth = imgCanvas.width;
@@ -204,6 +208,12 @@ function simpleImageEditor() {
       imageScaledWidth = hiddenImagePreview.width / imageProportionScale;
     }
     imgCanvasContext.drawImage(hiddenImagePreview, 0, 0, imageScaledWidth, imageScaledHeight);
+    if (resetOriginAndMax !== undefined && resetOriginAndMax === true) {
+      imageContentOriginX = 0;
+      imageContentOriginY = 0;
+      imageContentMaxX = imageScaledWidth;
+      imageContentMaxY = imageScaledHeight;
+    }
   }
 
   function loadImageSetup() {
@@ -226,7 +236,6 @@ function simpleImageEditor() {
     controls.classList.remove(removeClass);
     controls.classList.add(addClass);
   }
-
 
   function buildFileName(fullName) {
     if (fullName && fullName !== '' && fullName.indexOf('blob:') !== 0) {
@@ -258,7 +267,48 @@ function simpleImageEditor() {
       endY: 0
     };
   }
+
+  function translateOriginAndMaxContent(direction) {
+    var originX = Math.ceil(imageContentOriginX);
+    var originY = Math.ceil(imageContentOriginY);
+    var tempMaxX = Math.ceil(imageContentMaxX);
+    var tempMaxY = Math.ceil(imageContentMaxY);
+    imageContentOriginX = 0;
+    imageContentOriginY = 0;
+    imageContentMaxY = tempMaxX;
+    imageContentMaxX = tempMaxY;
+
+    if (direction < 0) {
+      if (originX > 0) {
+        imageContentMaxY = tempMaxX - originX;
+      }
+      if (originY > 0) {
+        imageContentOriginX = originY;
+      }
+      if (tempMaxX < canvas.width) {
+        imageContentOriginY = canvas.height - tempMaxX;
+        imageContentMaxY = imageContentOriginY + tempMaxX;
+      }
+      imageContentMaxX = tempMaxY;
+    }
+    else {
+      if (originY > 0) {
+        imageContentMaxX = tempMaxY - originY;
+      }
+      if (originX > 0) {
+        imageContentOriginY = originX;
+      }
+      if (tempMaxY < canvas.height) {
+        imageContentOriginX = canvas.width - tempMaxY;
+        imageContentMaxX = imageContentOriginX + tempMaxY;
+      }
+      imageContentMaxY = tempMaxX;
+    }
+  }
+
   function rotateEverything(direction) {
+    translateOriginAndMaxContent(direction);
+
     imgCanvasContext.save();
     var directionAngleModifier = (90 * direction);
     imageRotationAngle = (imageRotationAngle + directionAngleModifier) % 360;
@@ -269,12 +319,13 @@ function simpleImageEditor() {
     var yTranslation = absImageRotationAngle === 180 || imageRotationAngle === 270 || imageRotationAngle === -90 ? canvas.height : 0;
     imgCanvasContext.translate(xTranslation, yTranslation);
     imgCanvasContext.rotate(radianRotationAngle);
-    drawImageToCanvas();
+    drawImageToCanvas(false);
     imgCanvasContext.rotate(-radianRotationAngle);
     imgCanvasContext.translate(-xTranslation, yTranslation);
     imgCanvasContext.restore();
 
     var hiddenRotationRadian = (directionAngleModifier * Math.PI / 180);
+
     var xDrawingTranslate = direction > 0 ? hiddenDrawingCanvas.width : 0;
     var yDrawingTranslate = direction > 0 ? 0 : hiddenDrawingCanvas.height;
     hiddenDrawingCanvasContext.translate(xDrawingTranslate, yDrawingTranslate);
@@ -313,6 +364,21 @@ function simpleImageEditor() {
     mouseInfo.Y = getCurrentMouseY(e);
   }
 
+  function setContentBounds(currentX, currentY) {
+    if (currentX > imageContentMaxX) {
+      imageContentMaxX = currentX;
+    }
+    if (currentY > imageContentMaxY) {
+      imageContentMaxY = currentY;
+    }
+    if (currentX < imageContentOriginX) {
+      imageContentOriginX = currentX;
+    }
+    if (currentY < imageContentOriginY) {
+      imageContentOriginY = currentY;
+    }
+  }
+
   function drawPathOnCanvas() {
     canvasContext.beginPath();
     canvasContext.moveTo(mouseInfo.pX, mouseInfo.pY);
@@ -321,12 +387,14 @@ function simpleImageEditor() {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+    setContentBounds(mouseInfo.X, mouseInfo.Y);
   }
 
   function drawEraserOnCanvas() {
     var expandedLineWidth = canvasStrokeLineWidth * 3;
     canvasContext.clearRect(mouseInfo.X - canvasStrokeLineWidth, mouseInfo.Y - canvasStrokeLineWidth, expandedLineWidth, expandedLineWidth);
   }
+
   function drawSquareOnCanvas() {
     canvasContext.beginPath();
     canvasContext.moveTo(mouseInfo.beginX, mouseInfo.beginY);
@@ -338,6 +406,8 @@ function simpleImageEditor() {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+    setContentBounds(mouseInfo.beginX, mouseInfo.beginY);
+    setContentBounds(mouseInfo.endX, mouseInfo.endY);
   }
 
   function drawCircleOnCanvas() {
@@ -347,13 +417,16 @@ function simpleImageEditor() {
     var yDifference = mouseInfo.endY - mouseInfo.beginY;
     var yDifferenceHalf = yDifference * 0.5;
     var yPoint = mouseInfo.endY - yDifferenceHalf;
-    var distance = Math.sqrt(Math.pow(mouseInfo.endX - xPoint, 2) + Math.pow(mouseInfo.endY - yPoint, 2));
+    var radius = Math.sqrt(Math.pow(mouseInfo.endX - xPoint, 2) + Math.pow(mouseInfo.endY - yPoint, 2));
     canvasContext.beginPath();
-    canvasContext.arc(xPoint, yPoint, distance, 0, 2 * Math.PI);
+    canvasContext.arc(xPoint, yPoint, radius, 0, 2 * Math.PI);
     canvasContext.strokeStyle = canvasStrokeStyle;
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+
+    setContentBounds(xPoint + radius, yPoint + radius);
+    setContentBounds(xPoint - radius, yPoint - radius);
   }
 
   function drawLineOnCanvas() {
@@ -364,6 +437,8 @@ function simpleImageEditor() {
     canvasContext.lineWidth = canvasStrokeLineWidth;
     canvasContext.stroke();
     canvasContext.closePath();
+    setContentBounds(mouseInfo.beginX, mouseInfo.beginY);
+    setContentBounds(mouseInfo.endX, mouseInfo.endY);
   }
 
   function drawArrowOnCanvas() {
@@ -397,6 +472,9 @@ function simpleImageEditor() {
     canvasContext.fillStyle = canvasStrokeStyle;
     canvasContext.fill();
     canvasContext.closePath();
+
+    setContentBounds(mouseInfo.beginX, mouseInfo.beginY);
+    setContentBounds(mouseInfo.endX, mouseInfo.endY);
   }
 
   function getPerpendicularLinePointsForTriangle(x, y, distance, slope) {
@@ -473,9 +551,28 @@ function simpleImageEditor() {
 
   function setColorForImageEditor(color) {
     var colorPickerElement = document.getElementById('sie-cp');
-    if (color)
+    if (color !== undefined && color !== '' && !(color instanceof Event))
       colorPickerElement.value = color;
     canvasStrokeStyle = colorPickerElement.value;
+  }
+
+  function setColorOfFallbackPicker(color) {
+    var fallbackColorPickerElement = document.getElementById('sie-cps');
+    if (color !== undefined && color !== '' && !(color instanceof Event))
+      fallbackColorPickerElement.value = color;
+    for (var optionIndex = 0; optionIndex < fallbackColorPickerElement.options.length; optionIndex++) {
+      var currentOption = fallbackColorPickerElement.options[optionIndex];
+      if (currentOption.value === fallbackColorPickerElement.value) {
+        fallbackColorPickerElement.style.backgroundColor = currentOption.style.backgroundColor;
+        fallbackColorPickerElement.style.color = currentOption.style.color;
+        break;
+      }
+    }
+    setColorForImageEditor(fallbackColorPickerElement.value);
+  }
+
+  function handleFallbackColorSelectorChange(e) {
+    setColorOfFallbackPicker(e.target.value);
   }
 
   function handleImageEditorSave() {
@@ -483,26 +580,61 @@ function simpleImageEditor() {
     var editedImageFileType = configSettings.exportImageFileType || 'png';
 
     var editedFileName = decodeURI(uneditedImageFileNameNoExtension + '.' + editedImageFileType);
+    var removalCharacters = ['#', '%', '&', '{', '}', '\\', '>', '<', '*', '?', '/', ' ', '$', '!', "'", '"', ':', '@', '+'];
+    for (var i = 0; i < removalCharacters.length; i++) {
+      var specialCharacter = removalCharacters[i];
+      editedFileName = editedFileName.replace(specialCharacter, '');
+    }
 
     finalCanvasContext.clearRect(0, 0, finalCanvas.width, finalCanvas.height);
     finalCanvasContext.drawImage(imgCanvas, 0, 0);
     finalCanvasContext.drawImage(canvas, 0, 0);
 
-    var savedUrlOctet = finalCanvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
+    var offscreenResizedCanvas = document.createElement('canvas');
+    var exportWidth = imageContentMaxX - imageContentOriginX;
+    var exportHeight = imageContentMaxY - imageContentOriginY;
+    offscreenResizedCanvas.width = exportWidth;
+    offscreenResizedCanvas.height = exportHeight;
+    offscreenResizedCanvas.getContext('2d').drawImage(finalCanvas, imageContentOriginX, imageContentOriginY, exportWidth, exportHeight, 0, 0, exportWidth, exportHeight);
+
+    var savedUrlOctet = offscreenResizedCanvas.toDataURL("image/" + editedImageFileType).replace("image/" + editedImageFileType, "image/octet-stream");
+    var blob;
+    if (offscreenResizedCanvas.msToBlob)
+      blob = offscreenResizedCanvas.msToBlob();
     hiddenLink.setAttribute('download', editedFileName);
     hiddenLink.setAttribute('href', savedUrlOctet);
 
     return {
       originalFileName: decodeURI(uneditedImageFileName),
       base64Image: savedUrlOctet,
+      blob: blob,
       editedFileName: editedFileName
     };
   }
 
+  function doesBrowserSupportColorPicker() {
+    var inputElem = document.createElement('input');
+
+    inputElem.setAttribute('type', 'color');
+    var isColorElementType = inputElem.type !== 'text';
+
+    if (isColorElementType) {
+      var smile = ':)';
+      inputElem.value = smile;
+      isColorElementType = inputElem.value != smile;
+    }
+
+    return isColorElementType;
+  }
+
   function handleImageEditorDownload() {
-    handleImageEditorSave();
-    var hiddenLink = document.getElementById('sie-hsl');
-    hiddenLink.click();
+    var imageInfo = handleImageEditorSave();
+    if (imageInfo.blob)
+      window.navigator.msSaveBlob(imageInfo.blob, imageInfo.editedFileName);
+    else {
+      var hiddenLink = document.getElementById('sie-hsl');
+      hiddenLink.click();
+    }
   }
 
   function handleDrawingControlClick(e) {
@@ -557,9 +689,29 @@ function simpleImageEditor() {
     setDrawingThickness(canvasStrokeLineWidth, true);
 
     var colorPickerElement = document.getElementById('sie-cp');
-    colorPickerElement.addEventListener('change', setColorForImageEditor, false);
-    colorPickerElement.value = configSettings.defaultDrawingColor || '#FF0000';
-    setColorForImageEditor();
+    var colorPickerFallbackSelect = document.getElementById('sie-cps');
+    if (doesBrowserSupportColorPicker()) {
+      colorPickerElement.addEventListener('change', setColorForImageEditor, false);
+      colorPickerElement.value = configSettings.defaultDrawingColor || '#FF0000';
+      colorPickerFallbackSelect.style.display = 'none';
+      colorPickerElement.style.display = 'initial';
+      setColorForImageEditor();
+    } else {
+      colorPickerFallbackSelect.addEventListener('change', handleFallbackColorSelectorChange, false);
+      colorPickerFallbackSelect.value = 'red';
+      if (configSettings.defaultDrawingColor && configSettings.defaultDrawingColor !== '') {
+        for (var optionIndex = 0; optionIndex < colorPickerFallbackSelect.options.length; optionIndex++) {
+          var selectOption = colorPickerFallbackSelect.options[optionIndex];
+          if (selectOption.value === configSettings.defaultDrawingColor) {
+            colorPickerFallbackSelect.value = selectOption.value;
+            break;
+          }
+        }
+      }
+      colorPickerElement.style.display = 'none';
+      colorPickerFallbackSelect.style.display = 'initial';
+      setColorOfFallbackPicker();
+    }
 
     canvas.addEventListener('mousedown', handleImageEditorMouseBegin, false);
     canvas.addEventListener('mousemove', handleImageEditorMouseMove, false);
@@ -591,12 +743,12 @@ function simpleImageEditor() {
   }
 
   function generateCss() {
-    var generatedCSS = '<style>#sie-cnv{position:relative}#sie-i-cnv{position:absolute}#sie-h-cnv{display:none;position:relative}#sie-f-cnv{display:none;position:relative}.sie-cnt{overflow:hidden;margin-bottom:10px;margin-top:10px;text-align:center;border:1px #000 solid}.sie-cnt>img{width:96%;position:absolute;display:block;top:0;left:6px}#sie-cnv:hover{cursor:cell}.sie-ib{display:inline-block}.sie-cc button{width:80px}.sie-h{display:none!important}#sie-cnt{display:hidden}#sie-c{vertical-align:top;margin-left:10px;min-width:180px;width:180px}#sie-c .sie-cc{margin-top:10px;margin-bottom:10px}.sie-pc{color:#fff;background-color:#494a4f;border:#767676 2px solid}#sie-lw{width:70px}.sie-bc{margin-right:10px;width:80px}</style>';
+    var generatedCSS = '<style>#sie-cnv{position:relative}#sie-i-cnv{position:absolute}#sie-h-cnv{display:none;position:relative}#sie-f-cnv{display:none;position:relative}.sie-cnt{overflow:hidden;margin-bottom:10px;margin-top:10px;text-align:center;border:1px #000 solid}.sie-cnt>img{width:96%;position:absolute;display:block;top:0;left:6px}#sie-cnv:hover{cursor:cell}.sie-ib{display:inline-block}.sie-cc button{width:80px}.sie-h{display:none!important}#sie-cnt{display:hidden}#sie-c{vertical-align:top;margin-left:10px;min-width:180px;width:180px}#sie-c .sie-cc{margin-top:10px;margin-bottom:10px}.sie-pc{color:#fff;background-color:#494a4f;border:#767676 2px solid}#sie-lw{width:70px}.sie-bc{margin-right:10px;width:80px}#sie-cps{width:75px}</style>';
     return generatedCSS;
   }
 
   function generateHTML() {
-    var generatedHTML = '<input id="sie-fu" type="file"><span>"ctrl + v" to paste</span><br><div id="sie"><canvas id="sie-i-cnv" class="sie-cnt"></canvas><canvas id="sie-cnv" class="sie-cnt"></canvas><canvas id="sie-h-cnv" class="sie-cnt"></canvas><canvas id="sie-f-cnv" class="sie-cnt"></canvas><div id="sie-cnt" class="sie-cnt sie-h"><img id="sie-hp"> <a id="sie-hsl"></a></div><div id="sie-c" class="sie-h"><div class="sie-bc sie-ib"><div class="sie-cc"><button id="sie-rbl">&lt;- Rotate</button></div></div><div class="sie-bc sie-ib"><div class="sie-cc"><button id="sie-rbr">-&gt; Rotate</button></div></div><hr><div class="sie-cc"><input id="sie-cp" type="color"> <span>Select color</span></div><div class="sie-cc"><input id="sie-lw" min="1" max="10" type="range"> <span>Line width: <span id="sie-lwd"></span></span></div><div class="sie-ib sie-bc"><div class="sie-cc"><button data-value="3" class="sie-dc">Eraser</button></div><div class="sie-cc"><button data-value="0" class="sie-dc">Pencil</button></div><div class="sie-cc"><button data-value="1" class="sie-dc">Line</button></div></div><div class="sie-ib sie-bc"><div class="sie-cc"><button data-value="2" class="sie-dc">Arrow</button></div><div class="sie-cc"><button data-value="4" class="sie-dc">Square</button></div><div class="sie-cc"><button data-value="5" class="sie-dc">Circle</button></div></div><hr><div class="sie-cc"><div class="sie-ib sie-bc"><button id="sie-sb">Save</button></div><div class="sie-ib sie-bc"><button id="sie-d">Download</button></div></div></div></div>';
+    var generatedHTML = '<input id="sie-fu" type="file"><span>"ctrl + v" to paste</span><br><div id="sie"><canvas id="sie-i-cnv" class="sie-cnt"></canvas><canvas id="sie-cnv" class="sie-cnt"></canvas><canvas id="sie-h-cnv" class="sie-cnt"></canvas><canvas id="sie-f-cnv" class="sie-cnt"></canvas><div id="sie-cnt" class="sie-cnt sie-h"><img id="sie-hp"> <a id="sie-hsl"></a></div><div id="sie-c" class="sie-h"><div class="sie-bc sie-ib"><div class="sie-cc"><button id="sie-rbl">&lt;- Rotate</button></div></div><div class="sie-bc sie-ib"><div class="sie-cc"><button id="sie-rbr">-&gt; Rotate</button></div></div><hr><div class="sie-cc"><input id="sie-cp" type="color"> <select id="sie-cps"><option style="background-color: black; color: white;" value="black">black</option><option style="background-color: blue; color: white;" value="blue">blue</option><option style="background-color: green; color: white;" value="green">green</option><option style="background-color: orange" value="orange">orange</option><option style="background-color: purple; color: white;" value="purple">purple</option><option style="background-color: red; color: white;" value="red">red</option><option style="background-color: white; color: black;" value="white">white</option><option style="background-color: yellow" value="yellow">yellow</option></select> <span>Select color</span></div><div class="sie-cc"><input id="sie-lw" min="1" max="10" type="range"> <span>Line width: <span id="sie-lwd"></span></span></div><div class="sie-ib sie-bc"><div class="sie-cc"><button data-value="3" class="sie-dc">Eraser</button></div><div class="sie-cc"><button data-value="0" class="sie-dc">Pencil</button></div><div class="sie-cc"><button data-value="1" class="sie-dc">Line</button></div></div><div class="sie-ib sie-bc"><div class="sie-cc"><button data-value="2" class="sie-dc">Arrow</button></div><div class="sie-cc"><button data-value="4" class="sie-dc">Square</button></div><div class="sie-cc"><button data-value="5" class="sie-dc">Circle</button></div></div><hr><div class="sie-cc"><div class="sie-ib sie-bc"><button id="sie-sb">Save</button></div><div class="sie-ib sie-bc"><button id="sie-d">Download</button></div></div></div></div>';
     return generatedHTML;
   }
 
@@ -607,7 +759,9 @@ function simpleImageEditor() {
   var imageUploadElement = document.getElementById("sie-fu");
   imageUploadElement.addEventListener('input', loadImageFromFileInput, false);
   var imagePreview = document.getElementById('sie-hp');
-  imagePreview.addEventListener('load', drawImageToCanvas, false);
+  imagePreview.addEventListener('load', function () {
+    drawImageToCanvas(true);
+  }, false);
 
   canvas = document.getElementById('sie-cnv');
   canvas.width = configSettings.width || 300;
