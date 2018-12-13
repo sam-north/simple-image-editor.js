@@ -46,6 +46,7 @@ Instantiate!
 * Download edited image
 * Rotate image
 * Draw on image with different drawing tools
+* Works in IE by downloading as blob and uses a limited color picker select instead of the HTML5 input color.
 
 #### Drawing tools
 ------
